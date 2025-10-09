@@ -66,7 +66,9 @@ git push origin main
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Click "New Project"
 3. Import your GitHub repository
-4. Configure environment variables in Vercel:
+4. **Configure environment variables in Vercel:**
+   - Go to Project Settings → Environment Variables
+   - Add each variable manually (don't use the vercel.json approach)
    - Copy all variables from `.env.local`
    - Update `NEXTAUTH_URL` to your production domain
 5. Deploy!
@@ -109,18 +111,23 @@ After deployment, verify:
 
 ### Common Issues:
 
-1. **"Missing Supabase environment variables"**
+1. **"Environment Variable references Secret which does not exist"**
+   - **Solution**: Don't use `vercel.json` for environment variables
+   - Go to Vercel Dashboard → Project Settings → Environment Variables
+   - Add variables manually instead of using the `@secret_name` syntax
+
+2. **"Missing Supabase environment variables"**
    - Check that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set in Vercel
 
-2. **Twitch OAuth not working**
+3. **Twitch OAuth not working**
    - Verify callback URL matches exactly in Twitch console
    - Check `NEXTAUTH_URL` is set to production URL
 
-3. **Database connection issues**
+4. **Database connection issues**
    - Verify Supabase credentials are correct
    - Check that database schema was run successfully
 
-4. **Real-time not working**
+5. **Real-time not working**
    - Ensure tables are enabled in Supabase Replication settings
    - Check browser console for WebSocket errors
 
