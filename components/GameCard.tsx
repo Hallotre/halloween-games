@@ -55,7 +55,7 @@ export default function GameCard({
         />
         {game.is_played && (
           <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">✓ PLAYED</span>
+            <span className="text-white text-2xl font-bold">✓ SPILT</span>
           </div>
         )}
       </div>
@@ -67,7 +67,7 @@ export default function GameCard({
         
         <div className="flex items-center justify-between mb-3">
           <p className="text-gray-400 text-sm">
-            Suggested by <span className="text-purple-400 font-medium">{game.suggested_by}</span>
+            Foreslått av <span className="text-purple-400 font-medium">{game.suggested_by}</span>
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export default function GameCard({
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
                 >
-                  {game.is_played ? '↩️ Unmark' : '✓ Played'}
+                  {game.is_played ? '↩️ Fjern merking' : '✓ Spilt'}
                 </button>
               )}
               {onDelete && (

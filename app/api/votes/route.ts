@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     const userId = (session.user as any).id;
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching votes:', error);
-      return NextResponse.json({ error: 'Failed to fetch votes' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke hente stemmer' }, { status: 500 });
     }
 
     return NextResponse.json(votes || []);
@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     const body = await request.json();
     const { game_id } = body;
 
     if (!game_id) {
-      return NextResponse.json({ error: 'Missing game_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Mangler game_id' }, { status: 400 });
     }
 
     const userId = (session.user as any).id;
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingVote) {
-      return NextResponse.json({ error: 'Already voted for this game' }, { status: 409 });
+      return NextResponse.json({ error: 'Har allerede stemt på dette spillet' }, { status: 409 });
     }
 
     // Insert vote
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error inserting vote:', error);
-      return NextResponse.json({ error: 'Failed to add vote' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke legge til stemme' }, { status: 500 });
     }
 
     return NextResponse.json(newVote, { status: 201 });
@@ -89,14 +89,14 @@ export async function DELETE(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const game_id = searchParams.get('game_id');
 
     if (!game_id) {
-      return NextResponse.json({ error: 'Missing game_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Mangler game_id' }, { status: 400 });
     }
 
     const userId = (session.user as any).id;
@@ -110,7 +110,7 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Error deleting vote:', error);
-      return NextResponse.json({ error: 'Failed to remove vote' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke fjerne stemme' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

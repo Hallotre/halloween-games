@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(results);
   } catch (error) {
     console.error('Error searching Steam games:', error);
-    return NextResponse.json({ error: 'Failed to search games' }, { status: 500 });
+    return NextResponse.json({ error: 'Kunne ikke søke etter spill' }, { status: 500 });
   }
 }
 

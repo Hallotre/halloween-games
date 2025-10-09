@@ -7,8 +7,8 @@ import Navbar from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Halloween Game Suggester",
-  description: "Suggest spooky games for the Halloween stream!",
+  title: "Skibens Spooky Spill Forslag",
+  description: "Forslag til spooky spill for Halloween stream!",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="no">
       <body className={`${inter.className} bg-gray-900 min-h-screen`}>
         <Providers>
           <Navbar />

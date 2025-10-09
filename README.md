@@ -1,6 +1,6 @@
-# Halloween Game Suggester 🎃👻
+# Halloween Spillforslag 🎃👻
 
-A web app for Twitch chat to suggest spooky games for streamers to play during Halloween! Built with Next.js, Supabase, and Twitch OAuth.
+En nettside for Twitch-chat å foreslå skumle spill for streamere å spille under Halloween! Bygget med Next.js, Supabase, og Twitch OAuth.
 
 > **📚 New here?** Check out the [Documentation Index](DOCUMENTATION_INDEX.md) for a complete guide to all documentation files, or jump straight to the [Quick Start Guide](QUICK_START.md) to get running in 5 minutes!
 

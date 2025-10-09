@@ -17,7 +17,7 @@ export async function GET() {
 
     if (error) {
       console.error('Error fetching games:', error);
-      return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke hente spill' }, { status: 500 });
     }
 
     // Transform the data to include vote_count
@@ -39,21 +39,21 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     const body = await request.json();
     const { steam_app_id } = body;
 
     if (!steam_app_id || typeof steam_app_id !== 'number') {
-      return NextResponse.json({ error: 'Invalid steam_app_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Ugyldig steam_app_id' }, { status: 400 });
     }
 
     // Validate game exists on Steam
     const gameDetails = await getSteamGameDetails(steam_app_id);
 
     if (!gameDetails) {
-      return NextResponse.json({ error: 'Game not found on Steam' }, { status: 404 });
+      return NextResponse.json({ error: 'Spill ikke funnet på Steam' }, { status: 404 });
     }
 
     // Check if game already exists
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingGame) {
-      return NextResponse.json({ error: 'Game already suggested' }, { status: 409 });
+      return NextResponse.json({ error: 'Spill allerede foreslått' }, { status: 409 });
     }
 
     // Insert new game
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error inserting game:', error);
-      return NextResponse.json({ error: 'Failed to add game' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke legge til spill' }, { status: 500 });
     }
 
     return NextResponse.json(newGame, { status: 201 });
@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     // Check if user is the streamer
@@ -105,14 +105,14 @@ export async function PATCH(request: NextRequest) {
     const streamerId = process.env.STREAMER_TWITCH_ID;
 
     if (userId !== streamerId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbudt' }, { status: 403 });
     }
 
     const body = await request.json();
     const { game_id, is_played } = body;
 
     if (!game_id || typeof is_played !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+      return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -124,7 +124,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       console.error('Error updating game:', error);
-      return NextResponse.json({ error: 'Failed to update game' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke oppdatere spill' }, { status: 500 });
     }
 
     return NextResponse.json(data);
@@ -139,7 +139,7 @@ export async function DELETE(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
 
     // Check if user is the streamer
@@ -147,14 +147,14 @@ export async function DELETE(request: NextRequest) {
     const streamerId = process.env.STREAMER_TWITCH_ID;
 
     if (userId !== streamerId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbudt' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const game_id = searchParams.get('game_id');
 
     if (!game_id) {
-      return NextResponse.json({ error: 'Missing game_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Mangler game_id' }, { status: 400 });
     }
 
     // Delete associated votes first (cascade should handle this, but being explicit)
@@ -168,7 +168,7 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Error deleting game:', error);
-      return NextResponse.json({ error: 'Failed to delete game' }, { status: 500 });
+      return NextResponse.json({ error: 'Kunne ikke slette spill' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

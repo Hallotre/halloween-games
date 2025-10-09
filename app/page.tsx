@@ -168,7 +168,7 @@ export default function Home() {
   };
 
   const handleDelete = async (gameId: string) => {
-    if (!confirm('Are you sure you want to delete this game?')) {
+    if (!confirm('Er du sikker på at du vil slette dette spillet?')) {
       return;
     }
 
@@ -190,21 +190,21 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold text-white mb-4">
-            🎃 Spooky Game Suggestions 👻
+            🎃 Skumle Spillforslag 👻
           </h2>
           <p className="text-gray-300 text-lg mb-6">
-            Vote for the scariest games you want to see on stream this Halloween!
+            Stem på de skumleste spillene du vil se på stream denne halloween!
           </p>
           <GameSubmitForm onGameSubmitted={fetchGames} />
         </div>
 
         {isLoading ? (
           <div className="text-center text-white text-xl">
-            Loading games...
+            Laster spill...
           </div>
         ) : games.length === 0 ? (
           <div className="text-center text-gray-400 text-xl">
-            No games suggested yet. Be the first to suggest a spooky game!
+            Ingen spill foreslått ennå. Vær den første til å foreslå et skummelt spill!
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

@@ -101,14 +101,14 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
         onClick={() => setIsOpen(true)}
         className="bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-xl"
       >
-        + Suggest a Spooky Game
+        + Foreslå et skummelt spill
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-white">Suggest a Game</h2>
+              <h2 className="text-2xl font-bold text-white">Foreslå et spill</h2>
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -132,13 +132,13 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                     setSearchQuery(e.target.value);
                     setSelectedGame(null);
                   }}
-                  placeholder="Search for a Steam game..."
+                  placeholder="Søk etter et Steam-spill..."
                   className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
                   autoFocus
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-3 text-gray-400">
-                    Searching...
+                    Søker...
                   </div>
                 )}
               </div>
@@ -160,7 +160,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
               {selectedGame && (
                 <div className="bg-gray-700 rounded-lg p-4">
                   <p className="text-white">
-                    <span className="text-gray-400">Selected:</span>{' '}
+                    <span className="text-gray-400">Valgt:</span>{' '}
                     <span className="font-bold">{selectedGame.name}</span>
                   </p>
                 </div>
@@ -183,14 +183,14 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                   }}
                   className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
                 >
-                  Cancel
+                  Avbryt
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!selectedGame || isSubmitting}
                   className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Game'}
+                  {isSubmitting ? 'Sender...' : 'Send inn spill'}
                 </button>
               </div>
             </div>
