@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     // Transform the data to include vote_count
-    const gamesWithVotes = games?.map(game => ({
+    const gamesWithVotes = games?.map((game: any) => ({
       ...game,
       vote_count: game.votes?.[0]?.count || 0,
       votes: undefined, // Remove the nested votes object
