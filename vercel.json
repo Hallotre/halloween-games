@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "env": {
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "TWITCH_CLIENT_ID": "@twitch_client_id",
+    "TWITCH_CLIENT_SECRET": "@twitch_client_secret",
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "STEAM_API_KEY": "@steam_api_key",
+    "STREAMER_TWITCH_ID": "@streamer_twitch_id"
+  }
+}
+
