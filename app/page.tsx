@@ -84,6 +84,11 @@ export default function Home() {
 
   // Set up real-time subscriptions
   useEffect(() => {
+    if (!supabase) {
+      console.warn('Supabase client not available. Real-time features disabled.');
+      return;
+    }
+
     // Subscribe to games changes
     const gamesSubscription = supabase
       .channel('games-channel')

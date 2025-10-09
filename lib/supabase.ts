@@ -1,16 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key';
+// Get environment variables with fallbacks
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Only throw error in runtime, not during build
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+// Only create client if we have valid environment variables
+let supabase: any = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn('Supabase environment variables not found. Supabase client will not be initialized.');
+  
+  // Create a mock client for development
   if (typeof window !== 'undefined') {
-    throw new Error('Missing Supabase environment variables');
+    console.error('Missing Supabase environment variables. Please check your .env.local file.');
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 export type Game = {
   id: string;
