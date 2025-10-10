@@ -195,7 +195,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold text-white mb-4">
-            🎃 Skumle Spillforslag 👻
+            🎃 Spooky Spillforslag 👻
           </h2>
           <p className="text-gray-300 text-lg mb-6">
             Stem på de skumleste spillene du vil se på stream denne halloween!
