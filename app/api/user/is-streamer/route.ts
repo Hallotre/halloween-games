@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { isAdmin } from '@/lib/admin';
 
 export async function GET() {
   try {
@@ -11,11 +12,17 @@ export async function GET() {
     }
 
     const userId = (session.user as any).id;
-    const streamerId = process.env.STREAMER_TWITCH_ID;
 
-    return NextResponse.json({ isStreamer: userId === streamerId });
+    // Check admin table instead of environment variable
+    const userIsAdmin = await isAdmin(userId);
+
+    return NextResponse.json({ isStreamer: userIsAdmin });
   } catch (error) {
-    console.error('Error checking streamer status:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error checking streamer status:', error);
+    } else {
+      console.error('Error checking streamer status');
+    }
     return NextResponse.json({ isStreamer: false });
   }
 }

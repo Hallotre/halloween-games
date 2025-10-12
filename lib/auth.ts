@@ -9,16 +9,15 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AUTH_TWITCH_SECRET || process.env.TWITCH_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'user:read:email',
+          scope: 'openid user:read:email',
+          claims: {
+            id_token: {
+              email: null,
+              picture: null,
+              preferred_username: null,
+            },
+          },
         },
-      },
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.preferred_username,
-          email: profile.email,
-          image: profile.picture,
-        };
       },
     }),
   ],

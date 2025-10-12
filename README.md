@@ -2,72 +2,73 @@
 
 En nettside for Twitch-chat å foreslå skumle spill for streamere å spille under Halloween! Bygget med Next.js, Supabase, og Twitch OAuth.
 
-> **📚 New here?** Check out the [Documentation Index](DOCUMENTATION_INDEX.md) for a complete guide to all documentation files, or jump straight to the [Quick Start Guide](QUICK_START.md) to get running in 5 minutes!
-
 ## Features
 
-- 🎮 **Steam Game Integration**: Search and validate games directly from Steam
+- 🎮 **Smart Steam Search**: Intelligent search with typo tolerance, acronym support, and fuzzy matching
 - 🔐 **Twitch OAuth**: Secure authentication with Twitch accounts
-- 👻 **Voting System**: Users can vote for their favorite game suggestions
+- 👻 **Voting System**: One vote per user, authenticated and tracked
 - ⚡ **Real-time Updates**: Live vote counts using Supabase real-time subscriptions
-- 🎬 **Streamer Controls**: Mark games as played or remove suggestions
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+- 🎬 **Admin Panel**: Database-driven admin system for managing games and admins
+- 👤 **User Profiles**: Personal page showing your suggestions and votes
+- 🔒 **Security**: Rate limiting, input validation, RLS policies, and CSRF protection
+- 🎨 **Modern UI**: Beautiful Halloween-themed design with animations
+- 📱 **Responsive**: Works perfectly on desktop and mobile devices
+- 🕵️ **Anonymous**: Game suggestions are anonymous to the public
 
 ## Tech Stack
 
-- **Frontend/Backend**: Next.js 14 (App Router)
+- **Frontend/Backend**: Next.js 15 (App Router)
 - **Database**: Supabase (PostgreSQL with real-time)
-- **Authentication**: NextAuth.js with Twitch OAuth
+- **Authentication**: NextAuth.js v4 with Twitch OAuth
 - **Styling**: Tailwind CSS
-- **Deployment**: Vercel
+- **Deployment**: Vercel-ready
 
-## Setup Instructions
+## Quick Setup
 
 ### 1. Prerequisites
 
 - Node.js 18+ installed
-- A Twitch account
-- A Supabase account (free tier works!)
-- A Vercel account (for deployment)
+- Twitch account
+- Supabase account (free tier)
+- Vercel account (for deployment)
 
 ### 2. Twitch Application Setup
 
 1. Go to [Twitch Developer Console](https://dev.twitch.tv/console)
-2. Click "Register Your Application"
-3. Fill in the details:
-   - **Name**: Halloween Game Suggester (or any name)
+2. Register Your Application:
+   - **Name**: Halloween Game Suggester
    - **OAuth Redirect URLs**: 
-     - `http://localhost:3000/api/auth/callback/twitch` (for local development)
-     - `https://your-domain.vercel.app/api/auth/callback/twitch` (for production)
+     - `http://localhost:3000/api/auth/callback/twitch` (development)
+     - `https://your-domain.vercel.app/api/auth/callback/twitch` (production)
    - **Category**: Website Integration
-4. Save your **Client ID** and **Client Secret**
+3. Save your **Client ID** and **Client Secret**
 
 ### 3. Supabase Setup
 
 1. Create a new project at [Supabase](https://supabase.com)
-2. Go to the SQL Editor and run the schema from `supabase-schema.sql`
-3. Get your project credentials:
-   - Go to Settings → API
-   - Copy the **Project URL** and **anon/public key**
+2. Run the SQL schemas in order:
+   - `supabase-schema.sql` (games and votes tables)
+   - `supabase-admins-schema.sql` (admin system)
+3. Update the initial admin in `supabase-admins-schema.sql` with your Twitch user ID
+4. Get your credentials from Settings → API:
+   - **Project URL**
+   - **anon/public key** 
+   - **service_role key** (for admin operations)
 
-### 4. Local Development Setup
+### 4. Local Development
 
-1. Clone the repository:
+1. Clone and install:
 ```bash
 git clone <your-repo-url>
 cd halloween-games
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Create `.env.local` file in the root directory:
+2. Create `.env.local`:
 ```env
-# NextAuth Configuration
+# NextAuth
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-random-secret-here
+NEXTAUTH_SECRET=<generate-with-openssl-rand-base64-32>
 
 # Twitch OAuth
 TWITCH_CLIENT_ID=your-twitch-client-id
@@ -75,117 +76,173 @@ TWITCH_CLIENT_SECRET=your-twitch-client-secret
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Steam API (optional - most endpoints work without it)
-STEAM_API_KEY=your-steam-api-key
-
-# Streamer Configuration (your Twitch user ID)
-STREAMER_TWITCH_ID=your-twitch-user-id
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-4. Generate a random secret for NEXTAUTH_SECRET:
+3. Generate NEXTAUTH_SECRET:
 ```bash
 openssl rand -base64 32
 ```
 
-5. Find your Twitch User ID:
-   - Sign in to Twitch
-   - Go to https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/
-   - Enter your username and copy the User ID
+4. Find your Twitch User ID at [streamweasels.com](https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/)
 
-6. Run the development server:
+5. Run development server:
 ```bash
 npm run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Open [http://localhost:3000](http://localhost:3000)
 
-### 5. Deployment to Vercel
+### 5. Deploy to Production
 
-1. Push your code to GitHub
+1. **Push to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Ready for production"
+   git push origin main
+   ```
 
-2. Go to [Vercel](https://vercel.com) and import your repository
+2. **Deploy on Vercel:**
+   - Go to [Vercel](https://vercel.com/new)
+   - Import your GitHub repository
+   - Add all environment variables (see ENVIRONMENT_VARIABLES.md)
+   - Update `NEXTAUTH_URL` to: `https://your-domain.vercel.app`
+   - Click Deploy
 
-3. Add all environment variables from `.env.local` to Vercel:
-   - Update `NEXTAUTH_URL` to your production URL
-   - Add the production callback URL to your Twitch app settings
+3. **Update Twitch OAuth:**
+   - Add production callback: `https://your-domain.vercel.app/api/auth/callback/twitch`
 
-4. Deploy!
+4. **Verify Deployment:**
+   - [ ] Test Twitch login
+   - [ ] Submit a game
+   - [ ] Vote on a game
+   - [ ] Check admin panel (if admin)
+
+**Critical Variables for Production:**
+```env
+NEXTAUTH_URL=https://your-domain.vercel.app
+NEXTAUTH_SECRET=[openssl rand -base64 32]
+SUPABASE_SERVICE_ROLE_KEY=[from Supabase Dashboard]
+```
 
 ## Database Schema
 
-The app uses two main tables:
+### Main Tables:
+- **`games`**: Game suggestions with Steam integration
+- **`votes`**: User votes with unique constraint
+- **`admins`**: Administrator management
 
-### `games` table
-- Stores all suggested games
-- Includes Steam app ID, game name, image, and who suggested it
-- Tracks if a game has been played
-
-### `votes` table
-- Stores user votes for games
-- Prevents duplicate votes with unique constraint
-- Links to games table via foreign key
-
-See `supabase-schema.sql` for the complete schema with Row Level Security policies.
+All tables have Row Level Security (RLS) enabled. See schema files for details.
 
 ## How to Use
 
-### For Viewers:
-1. Sign in with your Twitch account
-2. Click "Suggest a Spooky Game"
-3. Search for a Steam game
-4. Submit your suggestion
-5. Vote for your favorite games by clicking the pumpkin icon 🎃
+### For Users:
+1. Sign in with Twitch
+2. Click "Foreslå et skummelt spill"
+3. Search for a game (smart search with typo tolerance!)
+4. Vote for your favorites 🎃
+5. View your profile to see your suggestions and votes
 
-### For Streamers:
-- All viewer features, plus:
-- Mark games as "Played" when you've completed them
-- Delete inappropriate or duplicate suggestions
-- Games are sorted by vote count automatically
+### For Admins:
+- Everything users can do, plus:
+- Access admin panel (⚙️ Admin button in navbar)
+- Delete inappropriate suggestions
+- Add/remove other administrators
+- Manage the community
+
+## Smart Search Features
+
+The Steam search includes:
+- **Typo tolerance**: "outlats" finds "Outlast"
+- **Acronyms**: "RE" finds "Resident Evil"
+- **Roman numerals**: "Silent Hill 2" = "Silent Hill II"
+- **Popular game boosting**: Horror games prioritized
+- **Fuzzy matching**: Up to 30% character difference
+- **Junk filtering**: No soundtracks or DLC clutter
 
 ## API Routes
 
+### Games
 - `GET /api/games` - Fetch all games with vote counts
-- `POST /api/games` - Submit a new game (requires auth)
-- `PATCH /api/games` - Mark game as played (streamer only)
-- `DELETE /api/games` - Delete a game (streamer only)
-- `GET /api/votes` - Get current user's votes
-- `POST /api/votes` - Vote for a game
+- `POST /api/games` - Submit a game (auth required)
+- `DELETE /api/games` - Delete a game (admin only)
+
+### Votes  
+- `GET /api/votes` - Get user's votes
+- `POST /api/votes` - Vote for a game (auth required, one per game)
 - `DELETE /api/votes` - Remove vote
-- `GET /api/steam/search` - Search Steam games
 
-## Real-time Features
+### Admin
+- `GET /api/admins` - List admins (admin only)
+- `POST /api/admins` - Add admin (admin only)
+- `DELETE /api/admins` - Remove admin (admin only)
 
-The app uses Supabase real-time subscriptions to automatically update:
-- New game suggestions appear instantly
-- Vote counts update live for all users
-- No page refresh needed!
+### Steam
+- `GET /api/steam/search?q=query` - Smart search Steam games
+
+### User
+- `GET /api/user/is-streamer` - Check if user is admin
+
+## Security Features
+
+- ✅ Row Level Security (RLS) on all tables
+- ✅ Server-side operations use service role key
+- ✅ Rate limiting on all endpoints
+- ✅ Input validation and sanitization
+- ✅ CSRF protection middleware
+- ✅ Security headers (X-Frame-Options, etc.)
+- ✅ Authenticated voting (one vote per user)
+- ✅ Admin-only operations verified server-side
 
 ## Troubleshooting
 
-### "Unauthorized" errors
-- Make sure you're signed in with Twitch
-- Check that your environment variables are set correctly
+### Authentication Issues
+- Verify environment variables are set correctly
+- Check Twitch callback URLs match exactly
+- Ensure NEXTAUTH_SECRET is generated
+- Clear browser cookies and try again
 
-### Games not appearing
-- Check browser console for errors
-- Verify Supabase connection
-- Ensure the database schema is set up correctly
+### Database Issues
+- Verify Supabase URL and keys
+- Run both SQL schema files
+- Check RLS policies are enabled
+- Update initial admin with your Twitch user ID
 
-### Twitch OAuth not working
-- Verify callback URLs match exactly in Twitch developer console
-- Check NEXTAUTH_URL is set correctly
-- Make sure NEXTAUTH_SECRET is set
+### Admin Not Showing
+- Verify you're in the `admins` table in Supabase
+- Check Twitch user ID matches exactly
+- Sign out and back in to refresh session
 
-### Streamer controls not showing
-- Verify STREAMER_TWITCH_ID matches your Twitch user ID
-- Sign out and sign back in to refresh your session
+### Search Not Working
+- Check Steam API is accessible
+- Verify rate limits haven't been hit
+- Try refreshing the page
+
+## Project Structure
+
+```
+halloween-games/
+├── app/
+│   ├── admin/          # Admin panel page
+│   ├── profile/        # User profile page
+│   ├── api/            # API routes
+│   └── ...             # Main page and layout
+├── components/         # React components
+├── lib/                # Utilities and helpers
+├── middleware.ts       # Security middleware
+├── supabase-schema.sql         # Main database schema
+└── supabase-admins-schema.sql  # Admin table schema
+```
+
+## Environment Variables Reference
+
+See `ENVIRONMENT_VARIABLES.md` for detailed descriptions of all required variables.
 
 ## Contributing
 
-Feel free to open issues or submit pull requests!
+Issues and pull requests welcome!
 
 ## License
 
-MIT License - feel free to use this for your own streams!
+MIT License - feel free to use for your own! 🎃

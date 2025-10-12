@@ -91,18 +91,6 @@ CREATE POLICY "Users can delete votes"
 ALTER PUBLICATION supabase_realtime ADD TABLE games;
 ALTER PUBLICATION supabase_realtime ADD TABLE votes;
 
--- Optional: Create a view for games with vote counts (for easier querying)
-CREATE OR REPLACE VIEW games_with_votes AS
-SELECT 
-  g.*,
-  COUNT(v.id) as vote_count
-FROM games g
-LEFT JOIN votes v ON g.id = v.game_id
-GROUP BY g.id;
-
--- Grant access to the view
-GRANT SELECT ON games_with_votes TO public;
-
 -- Add some helpful comments
 COMMENT ON TABLE games IS 'Stores all game suggestions with Steam integration';
 COMMENT ON TABLE votes IS 'Stores user votes for games with unique constraint per user per game';
