@@ -87,7 +87,7 @@ export default function GameCard({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-gray-400 text-sm">Foreslått av simp</p>
+            <p className="text-gray-400 text-sm">Foreslått av en simp</p>
           </div>
         </div>
 
