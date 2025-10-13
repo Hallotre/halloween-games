@@ -6,6 +6,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { getSteamGameDetails } from '@/lib/steam';
 import { isValidSteamAppId, isValidUUID, sanitizeText, checkRateLimit } from '@/lib/validation';
 import { isAdmin } from '@/lib/admin';
+import { trackEvent as trackServerEvent } from '@/lib/tracking';
 
 export async function GET() {
   try {
@@ -238,12 +239,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Ugyldig game_id format' }, { status: 400 });
     }
 
-    // Delete associated votes first (cascade should handle this, but being explicit)
+		// Fetch game details before deletion for logging
+		const { data: gameBeforeDelete } = await supabaseServer
+			.from('games')
+			.select('id, game_name, steam_app_id')
+			.eq('id', game_id)
+			.single();
+
+		// Delete associated votes first (cascade should handle this, but being explicit)
     // Use server client for privileged operation
     await supabaseServer.from('votes').delete().eq('game_id', game_id);
 
     // Delete the game
-    const { error } = await supabaseServer
+		const { error } = await supabaseServer
       .from('games')
       .delete()
       .eq('id', game_id);
@@ -254,8 +262,29 @@ export async function DELETE(request: NextRequest) {
       } else {
         console.error('Error deleting game');
       }
+
+			// Track failed admin delete
+			const sessionId = `session_admin_${userId}_${Date.now()}`;
+			await trackServerEvent(sessionId, 'admin_delete_game', {
+				outcome: 'error',
+				game_id,
+				game_name: gameBeforeDelete?.game_name,
+				steam_app_id: gameBeforeDelete?.steam_app_id,
+				admin_username: (session.user as any)?.username || session.user?.name,
+				error: typeof error === 'object' && error !== null ? String((error as any).message || error) : String(error),
+			}, userId);
       return NextResponse.json({ error: 'Kunne ikke slette spill' }, { status: 500 });
     }
+
+		// Track successful admin delete
+		const sessionId = `session_admin_${userId}_${Date.now()}`;
+		await trackServerEvent(sessionId, 'admin_delete_game', {
+			outcome: 'success',
+			game_id,
+			game_name: gameBeforeDelete?.game_name,
+			steam_app_id: gameBeforeDelete?.steam_app_id,
+			admin_username: (session.user as any)?.username || session.user?.name,
+		}, userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -264,6 +293,23 @@ export async function DELETE(request: NextRequest) {
     } else {
       console.error('Error in DELETE /api/games');
     }
+
+		// Best-effort tracking of unexpected error
+		try {
+			const session = await getServerSession(authOptions);
+			const userId = (session?.user as any)?.id;
+			const { searchParams } = new URL(request.url);
+			const game_id = searchParams.get('game_id');
+			const sessionId = `session_admin_${userId || 'unknown'}_${Date.now()}`;
+			await trackServerEvent(sessionId, 'admin_delete_game', {
+				outcome: 'exception',
+				game_id,
+				admin_username: (session?.user as any)?.username || session?.user?.name,
+				error: typeof error === 'object' && error !== null ? String((error as any).message || error) : String(error),
+			}, userId);
+		} catch (_) {
+			// ignore secondary tracking failures
+		}
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -522,6 +522,60 @@ export default function AnalyticsDashboard({ isAdmin }: AnalyticsDashboardProps)
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Admin Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Admin handlinger
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {(analyticsData.recentActivity || [])
+                      .filter((a) => a.event_type === 'admin_delete_game')
+                      .slice(0, 20)
+                      .map((activity) => (
+                        <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline">Slett spill</Badge>
+                            {activity.event_data?.game_name && (
+                              <span className="text-sm text-muted-foreground">
+                                - {activity.event_data.game_name}
+                              </span>
+                            )}
+                            {activity.event_data?.outcome && (
+                              <span className={`text-xs px-2 py-1 rounded-full ${activity.event_data.outcome === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                                {activity.event_data.outcome}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {activity.event_data?.admin_username && (
+                              <span className="text-xs text-muted-foreground" title="Admin">
+                                {activity.event_data.admin_username}
+                              </span>
+                            )}
+                            {activity.user_id && (
+                              <span className="text-xs text-muted-foreground" title="Admin user id">
+                                {activity.user_id}
+                              </span>
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(activity.created_at).toLocaleString('no-NO')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    {((analyticsData.recentActivity || []).filter((a) => a.event_type === 'admin_delete_game').length === 0) && (
+                      <div className="text-center text-sm text-muted-foreground py-8">Ingen admin-slettehendelser funnet i nylig aktivitet</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
             {/* Hourly Activity */}
             <Card>
               <CardHeader>
