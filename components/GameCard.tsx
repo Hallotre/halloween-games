@@ -114,15 +114,27 @@ export default function GameCard({
             <span>{hasVoted ? 'Du har stemt!' : session ? 'Stem på dette' : 'Logg inn for å stemme'}</span>
           </button>
 
-          {/* Open in Steam Button */}
-          <a
-            href={`steam://store/${game.steam_app_id}`}
-            className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105"
-            title="Åpne i Steam-appen"
-          >
-            <span>🎮</span>
-            <span>Åpne i Steam</span>
-          </a>
+          {/* Open Buttons: Steam app + Web store */}
+          <div className="flex gap-2">
+            <a
+              href={`steam://store/${game.steam_app_id}`}
+              className="w-1/2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105"
+              title="Åpne i Steam-appen"
+            >
+              <span>🎮</span>
+              <span>Åpne i Steam</span>
+            </a>
+            <a
+              href={`https://store.steampowered.com/app/${game.steam_app_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-1/2 px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-purple-600 hover:to-orange-600 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
+              title="Åpne i nettleseren"
+            >
+              <span>🌐</span>
+              <span>Åpne på nett</span>
+            </a>
+          </div>
 
           {isStreamer && onDelete && (
             <button
