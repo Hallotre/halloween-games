@@ -18,6 +18,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isStreamer, setIsStreamer] = useState(false);
   const [sortBy, setSortBy] = useState<'votes' | 'newest' | 'oldest' | 'name'>('votes');
+  const [activeTab, setActiveTab] = useState<'all' | 'top5'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchGames = async () => {
     try {
@@ -193,10 +195,22 @@ export default function Home() {
   };
 
   const totalVotes = games.reduce((sum, game) => sum + (game.vote_count || 0), 0);
-  const topGame = games.length > 0 ? games[0] : null;
+
+  // Filter games by search query
+  const filteredGames = searchQuery.trim() 
+    ? games.filter(game => 
+        game.game_name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : games;
+
+  // Get top 5 games by votes (from filtered games)
+  const top5Games = [...filteredGames]
+    .filter(game => (game.vote_count || 0) > 0)
+    .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
+    .slice(0, 5);
 
   // Sort games based on selected criteria
-  const sortedGames = [...games].sort((a, b) => {
+  const sortedGames = [...filteredGames].sort((a, b) => {
     switch (sortBy) {
       case 'votes':
         const voteDiff = (b.vote_count || 0) - (a.vote_count || 0);
@@ -212,6 +226,9 @@ export default function Home() {
         return 0;
     }
   });
+
+  // Get games to display based on active tab
+  const displayGames = activeTab === 'top5' ? top5Games : sortedGames;
 
   return (
     <main className="min-h-screen relative">
@@ -239,7 +256,7 @@ export default function Home() {
             
             {/* Stats Bar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-2xl mx-auto">
-              <div className="bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-purple-500/20 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300">
+              <div className="bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-gray-700/50 hover:border-purple-500/30 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Image src="/media/img/skibenDOC.webp" alt="games" width={32} height={32} className="w-8 h-8 object-cover rounded-full" />
                   <div className="text-3xl font-bold text-purple-400 drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">
@@ -248,7 +265,7 @@ export default function Home() {
                 </div>
                 <div className="text-gray-400 text-sm">Spill foreslått</div>
               </div>
-              <div className="bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-orange-500/20 shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] transition-all duration-300">
+              <div className="bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-gray-700/50 hover:border-orange-500/30 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Image src="/media/img/POGGERS.webp" alt="votes" width={32} height={32} className="w-8 h-8 object-cover rounded-full" />
                   <div className="text-3xl font-bold text-orange-400 drop-shadow-[0_0_10px_rgba(234,88,12,0.8)]">
@@ -260,31 +277,6 @@ export default function Home() {
             </div>
 
           <GameSubmitForm onGameSubmitted={fetchGames} />
-
-            {/* Leading Game Banner */}
-            {topGame && (topGame.vote_count || 0) > 0 && (
-              <div className="mt-8 bg-gradient-to-r from-purple-900/40 to-orange-900/40 backdrop-blur rounded-lg p-6 border border-purple-500/30 max-w-2xl mx-auto shadow-[0_0_40px_rgba(139,92,246,0.4)] hover:shadow-[0_0_60px_rgba(139,92,246,0.6)] transition-all duration-500 relative overflow-hidden">
-                {/* Animated shimmer effect */}
-                <div className="absolute inset-0 rounded-lg opacity-30 pointer-events-none" style={{
-                  background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 3s linear infinite'
-                }}></div>
-                
-                <div className="flex items-center justify-center gap-3 mb-2 relative z-10">
-                  <div className="animate-bounce w-8 h-8" style={{ animationDuration: '2s' }}>
-                    <Image src="/media/img/skibenDEVIL.webp" alt="leader" width={32} height={32} className="w-full h-full object-cover rounded-full drop-shadow-[0_0_15px_rgba(234,88,12,0.9)]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">Leder: {topGame.game_name}</h3>
-                  <div className="animate-bounce w-8 h-8" style={{ animationDuration: '2s', animationDelay: '0.3s' }}>
-                    <Image src="/media/img/skibenDEVIL.webp" alt="leader" width={32} height={32} className="w-full h-full object-cover rounded-full drop-shadow-[0_0_15px_rgba(234,88,12,0.9)]" />
-                  </div>
-                </div>
-                <p className="text-gray-300">
-                  <span className="text-purple-400 font-bold">{topGame.vote_count}</span> stemmer
-                </p>
-              </div>
-            )}
           </div>
         </div>
         </div>
@@ -317,53 +309,134 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span>🎮</span>
-                Alle Forslag
-                <span className="text-gray-500 text-lg font-normal">({games.length})</span>
-              </h2>
-              
-              <div className="flex items-center gap-4">
-                {/* Sorting Dropdown */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort" className="text-sm text-gray-400">Sorter etter:</label>
-                  <select
-                    id="sort"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'votes' | 'newest' | 'oldest' | 'name')}
-                    className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-colors cursor-pointer focus:outline-none focus:border-purple-500"
+            {/* Tab Navigation and Controls */}
+            <div className="space-y-4 mb-6">
+              {/* Tab Navigation */}
+              <div className="flex items-center justify-between">
+                <div className="flex space-x-1 bg-gray-800/50 backdrop-blur rounded-lg p-1 border border-gray-700/50">
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                      activeTab === 'all'
+                        ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    }`}
                   >
-                    <option value="votes">🔥 Mest stemmer</option>
-                    <option value="newest">🆕 Nyeste først</option>
-                    <option value="oldest">📅 Eldste først</option>
-                    <option value="name">🔤 Alfabetisk</option>
-                  </select>
+                    <span className="flex items-center gap-2">
+                      <span>🎮</span>
+                      Alle Forslag
+                      <span className="text-sm opacity-75">({filteredGames.length})</span>
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('top5')}
+                    className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                      activeTab === 'top5'
+                        ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🏆</span>
+                      Top 5
+                      <span className="text-sm opacity-75">({top5Games.length})</span>
+                    </span>
+                  </button>
                 </div>
-
+                
                 <div className="text-sm text-gray-400 flex items-center gap-2">
                   <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                   Live oppdateringer
                 </div>
               </div>
+
+              {/* Search Input and Sorting */}
+              <div className="flex items-center gap-4">
+                {/* Search Input */}
+                <div className="flex-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-lg">🔍</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Søk etter spill..."
+                    className="w-full pl-12 pr-4 py-3 bg-gray-800/80 text-white rounded-lg focus:outline-none transition-all duration-200"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-300 transition-colors duration-200"
+                    >
+                      <span className="text-lg">✕</span>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Sorting Dropdown - Only show for "All" tab */}
+                {activeTab === 'all' && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="sort" className="text-sm text-gray-400">Sorter etter:</label>
+                    <select
+                      id="sort"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'votes' | 'newest' | 'oldest' | 'name')}
+                      className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700/50 hover:border-purple-500/40 transition-colors cursor-pointer focus:outline-none focus:border-purple-500/50"
+                    >
+                      <option value="votes">🔥 Mest stemmer</option>
+                      <option value="newest">🆕 Nyeste først</option>
+                      <option value="oldest">📅 Eldste først</option>
+                      <option value="name">🔤 Alfabetisk</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  userVotes={userVotes}
-                  onVote={handleVote}
-                  onUnvote={handleUnvote}
-                  onDelete={isStreamer ? handleDelete : undefined}
-                  isStreamer={isStreamer}
-                />
-              ))}
-          </div>
+          {/* Empty States */}
+          {activeTab === 'top5' && top5Games.length === 0 && !searchQuery && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🏆</div>
+              <h3 className="text-2xl font-bold text-white mb-2">Ingen spill med stemmer ennå</h3>
+              <p className="text-gray-400">Stem på spill for å se topplisten!</p>
+            </div>
+          )}
+
+          {/* No Search Results */}
+          {searchQuery && displayGames.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold text-white mb-2">Ingen spill funnet</h3>
+              <p className="text-gray-400 mb-4">Ingen spill matcher "{searchQuery}"</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                Tøm søk
+              </button>
+            </div>
+          )}
+
+          {/* Games Grid */}
+          {!(activeTab === 'top5' && top5Games.length === 0 && !searchQuery) && displayGames.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {displayGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    userVotes={userVotes}
+                    onVote={handleVote}
+                    onUnvote={handleUnvote}
+                    onDelete={isStreamer ? handleDelete : undefined}
+                    isStreamer={isStreamer}
+                  />
+                ))}
+            </div>
+          )}
 
             {!session && (
-              <div className="mt-12 text-center bg-gradient-to-r from-purple-900/20 to-orange-900/20 rounded-lg p-8 border border-purple-500/20">
+              <div className="mt-12 text-center bg-gradient-to-r from-purple-900/20 to-orange-900/20 rounded-lg p-8 border border-gray-700/30">
                 <p className="text-gray-300 text-lg mb-4 flex items-center justify-center gap-2">
                   <span className="inline-block w-8 h-8 flex-shrink-0">
                     <Image src="/media/img/skibenDOC.webp" alt="Doc Skiben" width={32} height={32} className="w-full h-full rounded-full object-cover" />

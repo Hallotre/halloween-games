@@ -171,7 +171,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
 
   return (
     <div ref={searchContainerRef} className="w-full max-w-4xl mx-auto">
-      <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 border border-purple-500/30 shadow-xl">
+      <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 border border-gray-700/40 shadow-xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <span className="text-3xl">🎮</span>
@@ -197,7 +197,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                 }
               }}
               placeholder="Søk etter Steam-spill (f.eks. Resident Evil, Outlast, Silent Hill)..."
-              className="w-full pl-14 pr-24 py-4 bg-gray-900 text-white rounded-xl focus:outline-none focus:ring-3 focus:ring-purple-500 border-2 border-gray-700  text-lg placeholder-gray-500 transition-all"
+              className="w-full pl-14 pr-24 py-4 bg-gray-900 text-white rounded-xl focus:outline-none text-lg placeholder-gray-500 transition-all"
             />
             <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
               {isSearching && (
@@ -236,8 +236,8 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                       disabled={isAlreadySuggested}
                       className={`group relative bg-gray-900 rounded-lg overflow-hidden shadow-md transition-all duration-300 border text-left ${
                         isAlreadySuggested 
-                          ? 'border-green-600 opacity-60 cursor-not-allowed' 
-                          : 'border-gray-700 hover:border-purple-500 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)]'
+                          ? 'border-green-600/60 opacity-60 cursor-not-allowed' 
+                          : 'border-gray-700/50 hover:border-purple-500/40 hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)]'
                       }`}
                     >
                       {/* Already Suggested Badge */}
@@ -299,7 +299,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
           {/* Selected Game Preview */}
           {selectedGame && (
             <div className="animate-slide-up">
-              <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-3 border border-green-500/50 mb-3">
+              <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-3 border border-green-600/30 mb-3">
                 <div className="flex items-center gap-2">
                   <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold">✓</span>
@@ -311,7 +311,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                 </div>
               </div>
               
-              <div className="bg-gray-900 rounded-xl overflow-hidden border border-purple-500/50 shadow-lg">
+              <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700/50 shadow-lg">
                 <div className="relative h-48 w-full bg-black group">
                   {gameImages[selectedGame.appid] ? (
                     <Image
@@ -387,7 +387,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-600/20 border border-red-600 rounded-xl p-3 flex items-center gap-2">
+            <div className="bg-red-600/20 border border-red-600/50 rounded-xl p-3 flex items-center gap-2">
               <span className="text-2xl">⚠️</span>
               <p className="text-red-400 text-sm">{error}</p>
             </div>

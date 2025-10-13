@@ -42,7 +42,7 @@ export default function GameCard({
   };
 
   return (
-    <div className="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-500 border border-gray-700 hover:border-purple-500 hover:-translate-y-2">
+    <div className="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all duration-500 border border-gray-700/50 hover:border-purple-500/40 hover:-translate-y-2">
 
       {/* Game Image */}
       <div className="relative w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden" style={{ aspectRatio: '460/215' }}>
@@ -87,7 +87,7 @@ export default function GameCard({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-gray-400 text-sm">Foreslått av et community medlem</p>
+            <p className="text-gray-400 text-sm">Foreslått av simp</p>
           </div>
         </div>
 
