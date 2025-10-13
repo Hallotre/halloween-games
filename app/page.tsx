@@ -6,7 +6,7 @@ import { Game } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import GameCard from '@/components/GameCard';
 import GameSubmitForm from '@/components/GameSubmitForm';
-import { trackVote } from '@/lib/analytics';
+import { trackPageView, trackVote, trackSearch, trackTabSwitch, trackSortingChange } from '@/lib/tracking';
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import FloatingEmotes from '@/components/FloatingEmotes';
@@ -74,6 +74,9 @@ export default function Home() {
     };
 
     loadData();
+    
+    // Track page view
+    trackPageView('home', (session?.user as any)?.id);
   }, [session]);
 
   useEffect(() => {
@@ -150,7 +153,9 @@ export default function Home() {
         
         // Track vote event
         const game = games.find(g => g.id === gameId);
-        trackVote('vote', game?.game_name);
+        if (game) {
+          trackVote(gameId, game.game_name, 'vote', (session?.user as any)?.id);
+        }
       }
     } catch (error) {
       console.error('Error voting:', error);
@@ -169,7 +174,9 @@ export default function Home() {
         
         // Track unvote event
         const game = games.find(g => g.id === gameId);
-        trackVote('unvote', game?.game_name);
+        if (game) {
+          trackVote(gameId, game.game_name, 'unvote', (session?.user as any)?.id);
+        }
       }
     } catch (error) {
       console.error('Error unvoting:', error);
@@ -202,6 +209,13 @@ export default function Home() {
         game.game_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : games;
+
+  // Track search when query changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      trackSearch(searchQuery, filteredGames.length, (session?.user as any)?.id);
+    }
+  }, [searchQuery, filteredGames.length, (session?.user as any)?.id]);
 
   // Get top 5 games by votes (from filtered games)
   const top5Games = [...filteredGames]
@@ -314,28 +328,34 @@ export default function Home() {
               {/* Tab Navigation */}
               <div className="flex items-center justify-between">
                 <div className="flex space-x-1 bg-gray-800/50 backdrop-blur rounded-lg p-1 border border-gray-700/50">
-                  <button
-                    onClick={() => setActiveTab('all')}
-                    className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
-                      activeTab === 'all'
-                        ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                    }`}
-                  >
+                <button
+                  onClick={() => {
+                    setActiveTab('all');
+                    trackTabSwitch('all', (session?.user as any)?.id);
+                  }}
+                  className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                    activeTab === 'all'
+                      ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
                     <span className="flex items-center gap-2">
                       <span>🎮</span>
                       Alle Forslag
                       <span className="text-sm opacity-75">({filteredGames.length})</span>
                     </span>
                   </button>
-                  <button
-                    onClick={() => setActiveTab('top5')}
-                    className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
-                      activeTab === 'top5'
-                        ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                    }`}
-                  >
+                <button
+                  onClick={() => {
+                    setActiveTab('top5');
+                    trackTabSwitch('top5', (session?.user as any)?.id);
+                  }}
+                  className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                    activeTab === 'top5'
+                      ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  }`}
+                >
                     <span className="flex items-center gap-2">
                       <span>🏆</span>
                       Top 5
@@ -381,7 +401,11 @@ export default function Home() {
                     <select
                       id="sort"
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as 'votes' | 'newest' | 'oldest' | 'name')}
+                      onChange={(e) => {
+                        const newSortBy = e.target.value as 'votes' | 'newest' | 'oldest' | 'name';
+                        setSortBy(newSortBy);
+                        trackSortingChange(newSortBy, (session?.user as any)?.id);
+                      }}
                       className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700/50 hover:border-purple-500/40 transition-colors cursor-pointer focus:outline-none focus:border-purple-500/50"
                     >
                       <option value="votes">🔥 Mest stemmer</option>

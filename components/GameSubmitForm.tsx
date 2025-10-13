@@ -4,7 +4,7 @@ import { SteamGame } from '@/lib/steam';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { trackGameSubmission, trackSearch } from '@/lib/analytics';
+import { trackSearch, trackGameSubmission } from '@/lib/tracking';
 
 interface GameSubmitFormProps {
   onGameSubmitted: () => void;
@@ -62,7 +62,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
         setSearchResults(data);
         
         // Track search event
-        trackSearch(searchQuery, data.length);
+        trackSearch(searchQuery, data.length, (session?.user as any)?.id);
         
         // Fetch images for top results
         data.slice(0, 12).forEach((game: SteamGame) => {
@@ -125,7 +125,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
       }
 
       // Success - track event
-      trackGameSubmission(selectedGame.name);
+      trackGameSubmission(selectedGame.appid.toString(), selectedGame.name, (session?.user as any)?.id);
       
       setSearchQuery('');
       setSelectedGame(null);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 
 interface Admin {
   id: string;
@@ -23,6 +24,7 @@ export default function AdminPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState<'admins' | 'analytics'>('admins');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -198,7 +200,45 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add Admin Form */}
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 bg-gray-800/50 backdrop-blur rounded-lg p-1 border border-gray-700/50 mb-8">
+          <button
+            onClick={() => setActiveTab('admins')}
+            className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+              activeTab === 'admins'
+                ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span>👥</span>
+              Administratorer
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+              activeTab === 'analytics'
+                ? 'bg-gradient-to-r from-purple-600 to-orange-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span>📊</span>
+              Analytics
+            </span>
+          </button>
+        </div>
+
+        {/* Analytics Dashboard */}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard isAdmin={isAdmin} />
+        )}
+
+        {/* Admin Management */}
+        {activeTab === 'admins' && (
+          <>
+            {/* Add Admin Form */}
         <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 mb-8 border border-purple-500/30 shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-4xl">➕</span>
@@ -383,6 +423,8 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+          </>
+        )}
 
         {/* Back Button */}
         <div className="mt-8 text-center">
