@@ -381,7 +381,7 @@ export default function Home() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Søk etter spill..."
+                    placeholder="Søk blandt foreslåtte spill..."
                     className="w-full pl-12 pr-4 py-3 bg-gray-800/80 text-white rounded-lg focus:outline-none transition-all duration-200"
                   />
                   {searchQuery && (
