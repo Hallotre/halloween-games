@@ -6,7 +6,7 @@ import { Game } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import GameCard from '@/components/GameCard';
 import GameSubmitForm from '@/components/GameSubmitForm';
-import { trackPageView, trackVote, trackSearch, trackTabSwitch, trackSortingChange } from '@/lib/tracking';
+import { trackPageView, trackVote, trackSearch, trackTabSwitch, trackSortingChange } from '@/lib/tracking-client';
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import FloatingEmotes from '@/components/FloatingEmotes';

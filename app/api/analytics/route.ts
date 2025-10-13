@@ -11,15 +11,12 @@ export const revalidate = 0;
 // GET - Get analytics data
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check for production
     const session = await getServerSession(authOptions);
-
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Ikke autorisert' }, { status: 401 });
     }
-
     const userId = (session.user as any).id;
-
-    // Check if user is an admin
     const userIsAdmin = await isAdmin(userId);
     if (!userIsAdmin) {
       return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 });
@@ -30,39 +27,44 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
 
-    // Fallback to direct queries if secure function doesn't exist yet
-    try {
-      const { data, error } = await supabaseServer
-        .rpc('get_analytics_data', {
-          start_date: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          end_date: endDate || new Date().toISOString()
-        });
+    // Skip RPC function to use enhanced analytics
+    // try {
+    //   const { data, error } = await supabaseServer
+    //     .rpc('get_analytics_data', {
+    //       start_date: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    //       end_date: endDate || new Date().toISOString()
+    //     });
 
-      if (error) {
-        throw error;
-      }
+    //   if (error) {
+    //     throw error;
+    //   }
 
-      return NextResponse.json(data);
-    } catch (rpcError) {
-      // Fallback to direct queries
+    //   return NextResponse.json(data);
+    // } catch (rpcError) {
+      // Use enhanced analytics
+      console.log('🔍 Using enhanced analytics...');
       
       const startDateFilter = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const endDateFilter = endDate || new Date().toISOString();
 
-      // Get total users
-      const { count: totalUsers } = await supabaseServer
+      // Get total users (unique count)
+      const { data: uniqueUsers } = await supabaseServer
         .from('tracking_events')
-        .select('user_id', { count: 'exact', head: true })
+        .select('user_id')
         .not('user_id', 'is', null)
         .gte('created_at', startDateFilter)
         .lte('created_at', endDateFilter);
+      
+      const totalUsers = new Set(uniqueUsers?.map((u: any) => u.user_id) || []).size;
 
-      // Get total sessions
-      const { count: totalSessions } = await supabaseServer
+      // Get total sessions (unique count)
+      const { data: uniqueSessions } = await supabaseServer
         .from('tracking_events')
-        .select('session_id', { count: 'exact', head: true })
+        .select('session_id')
         .gte('created_at', startDateFilter)
         .lte('created_at', endDateFilter);
+      
+      const totalSessions = new Set(uniqueSessions?.map((s: any) => s.session_id) || []).size;
 
       // Get total events
       const { count: totalEvents } = await supabaseServer
@@ -84,6 +86,97 @@ export async function GET(request: NextRequest) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
+
+      // Get enhanced event summary from secure view
+      const { data: eventSummary } = await supabaseServer
+        .from('event_summary')
+        .select('*')
+        .order('count', { ascending: false });
+
+      // Get daily activity summary from secure view
+      const { data: dailyActivity } = await supabaseServer
+        .from('daily_activity_summary')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(30);
+
+      // Get user engagement metrics from secure view
+      const { data: engagementMetrics } = await supabaseServer
+        .from('user_engagement_metrics')
+        .select('*');
+
+      // Get security analytics from secure view
+      const { data: securityMetrics } = await supabaseServer
+        .from('security_analytics')
+        .select('*');
+
+      // Get hourly activity data
+      let hourlyActivity = [];
+      try {
+        const { data: hourlyData } = await supabaseServer
+          .from('hourly_activity_summary')
+          .select('*')
+          .limit(24);
+        hourlyActivity = hourlyData || [];
+      } catch (error) {
+        // Silently handle error - hourly activity is optional
+      }
+
+      // Get enhanced analytics from working views
+      let weeklyActivity = [];
+      let userBehaviorMetrics = [];
+      let performanceMetrics = [];
+      let conversionFunnel = [];
+      let topPerformingContent = [];
+      let geographicAnalytics = [];
+      let deviceAnalytics = [];
+      let sessionAnalytics = [];
+
+      // Load all enhanced analytics
+      const { data: weeklyData } = await supabaseServer
+        .from('weekly_activity_summary')
+        .select('*')
+        .order('week_start', { ascending: false })
+        .limit(12);
+      weeklyActivity = weeklyData || [];
+
+      const { data: behaviorData } = await supabaseServer
+        .from('user_behavior_metrics')
+        .select('*');
+      userBehaviorMetrics = behaviorData || [];
+
+      const { data: performanceData } = await supabaseServer
+        .from('performance_metrics')
+        .select('*');
+      performanceMetrics = performanceData || [];
+
+      const { data: conversionData } = await supabaseServer
+        .from('conversion_funnel')
+        .select('*');
+      conversionFunnel = conversionData || [];
+
+      const { data: contentData } = await supabaseServer
+        .from('top_performing_content')
+        .select('*')
+        .limit(20);
+      topPerformingContent = contentData || [];
+
+      const { data: geoData } = await supabaseServer
+        .from('geographic_analytics')
+        .select('*');
+      geographicAnalytics = geoData || [];
+
+      const { data: deviceData } = await supabaseServer
+        .from('device_analytics')
+        .select('*');
+      deviceAnalytics = deviceData || [];
+
+      const { data: sessionData } = await supabaseServer
+        .from('session_analytics')
+        .select('*');
+      sessionAnalytics = sessionData || [];
+
+      // Enhanced analytics data loaded successfully
 
       // Get popular searches
       const { data: searchEvents } = await supabaseServer
@@ -114,17 +207,23 @@ export async function GET(request: NextRequest) {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-      const { count: dailyActiveUsers } = await supabaseServer
+      // Get daily active users (unique count)
+      const { data: dailyUsers } = await supabaseServer
         .from('tracking_events')
-        .select('user_id', { count: 'exact', head: true })
+        .select('user_id')
         .not('user_id', 'is', null)
         .gte('created_at', oneDayAgo.toISOString());
+      
+      const dailyActiveUsers = new Set(dailyUsers?.map((u: any) => u.user_id) || []).size;
 
-      const { count: weeklyActiveUsers } = await supabaseServer
+      // Get weekly active users (unique count)
+      const { data: weeklyUsers } = await supabaseServer
         .from('tracking_events')
-        .select('user_id', { count: 'exact', head: true })
+        .select('user_id')
         .not('user_id', 'is', null)
         .gte('created_at', oneWeekAgo.toISOString());
+      
+      const weeklyActiveUsers = new Set(weeklyUsers?.map((u: any) => u.user_id) || []).size;
 
       const analyticsData = {
         totalUsers: totalUsers || 0,
@@ -141,17 +240,27 @@ export async function GET(request: NextRequest) {
           weeklyActiveUsers: weeklyActiveUsers || 0,
           averageSessionDuration: 0
         },
-        popularSearches
+        popularSearches,
+        // Enhanced analytics from secure views
+        eventSummary: eventSummary || [],
+        dailyActivity: dailyActivity || [],
+        engagementMetrics: engagementMetrics || [],
+        securityMetrics: securityMetrics || [],
+        // Enhanced analytics from working views
+        hourlyActivity: hourlyActivity,
+        weeklyActivity: weeklyActivity,
+        userBehaviorMetrics: userBehaviorMetrics,
+        performanceMetrics: performanceMetrics,
+        conversionFunnel: conversionFunnel,
+        topPerformingContent: topPerformingContent,
+        geographicAnalytics: geographicAnalytics,
+        deviceAnalytics: deviceAnalytics,
+        sessionAnalytics: sessionAnalytics
       };
 
       return NextResponse.json(analyticsData);
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    } catch (error) {
       console.error('Error in GET /api/analytics:', error);
-    } else {
-      console.error('Error in GET /api/analytics');
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

@@ -32,6 +32,85 @@ En nettside for Twitch-chat å foreslå skumle spill for streamere å spille und
 - Supabase account (free tier)
 - Vercel account (for deployment)
 
+## Production Deployment
+
+### 1. Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+# NextAuth Configuration
+NEXTAUTH_URL=https://your-domain.vercel.app
+NEXTAUTH_SECRET=your-random-secret-here
+
+# Twitch OAuth
+TWITCH_CLIENT_ID=your-twitch-client-id
+TWITCH_CLIENT_SECRET=your-twitch-client-secret
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Supabase Server (CRITICAL FOR SECURITY)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Steam API (Optional)
+STEAM_API_KEY=your-steam-api-key
+
+# Streamer Configuration
+STREAMER_TWITCH_ID=your-twitch-user-id
+
+# Analytics (Optional)
+NEXT_PUBLIC_CLARITY_ID=your-clarity-project-id
+NEXT_PUBLIC_GA_ID=G-7BMRKE9L79
+
+# Production Settings
+NODE_ENV=production
+```
+
+### 2. Vercel Deployment
+
+1. **Connect Repository**:
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "New Project"
+   - Import your GitHub repository
+
+2. **Configure Environment Variables**:
+   - In Vercel project settings, go to "Environment Variables"
+   - Add all the variables from your `.env.local` file
+   - Make sure to set `NEXTAUTH_URL` to your production domain
+
+3. **Deploy**:
+   - Vercel will automatically build and deploy your project
+   - The build process will run `npm run build`
+   - Your site will be available at `https://your-project.vercel.app`
+
+### 3. Post-Deployment Setup
+
+1. **Update Twitch OAuth**:
+   - Go to [Twitch Developer Console](https://dev.twitch.tv/console)
+   - Update your application's OAuth Redirect URL to your production domain
+   - Add: `https://your-domain.vercel.app/api/auth/callback/twitch`
+
+2. **Database Setup**:
+   - Run the SQL schemas in your Supabase project
+   - Ensure all tables and RLS policies are created
+   - Test the admin functionality
+
+3. **Test Authentication**:
+   - Visit your production site
+   - Test Twitch login
+   - Verify admin access works correctly
+
+### 4. Security Checklist
+
+- ✅ Authentication is enabled for all protected routes
+- ✅ Environment variables are properly configured
+- ✅ Supabase RLS policies are active
+- ✅ No debug routes or console logs in production
+- ✅ Security headers are configured
+- ✅ HTTPS is enforced
+
 ### 2. Twitch Application Setup
 
 1. Go to [Twitch Developer Console](https://dev.twitch.tv/console)

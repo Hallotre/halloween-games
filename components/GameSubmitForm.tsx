@@ -4,7 +4,7 @@ import { SteamGame } from '@/lib/steam';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { trackSearch, trackGameSubmission } from '@/lib/tracking';
+import { trackSearch, trackGameSubmission } from '@/lib/tracking-client';
 
 interface GameSubmitFormProps {
   onGameSubmitted: () => void;
@@ -18,7 +18,9 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [selectedGame, setSelectedGame] = useState<SteamGame | null>(null);
-  const [gameImages, setGameImages] = useState<{ [key: number]: string }>({});
+  const [gameImages, setGameImages] = useState<{ [key: number]: string | null }>({});
+  const [imageLoading, setImageLoading] = useState<{ [key: number]: boolean }>({});
+  const [imageErrors, setImageErrors] = useState<{ [key: number]: number }>({});
   const [suggestedGames, setSuggestedGames] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -95,11 +97,41 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
   }, []);
 
   const fetchGameImage = async (appid: number) => {
-    if (gameImages[appid]) return;
+    if (gameImages[appid] !== undefined) return;
     
-    // Use Steam's CDN image URL format
-    const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`;
-    setGameImages(prev => ({ ...prev, [appid]: imageUrl }));
+    setImageLoading(prev => ({ ...prev, [appid]: true }));
+    
+    // Try multiple Steam CDN URLs in order of preference
+    const imageUrls = [
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
+      `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/header.jpg`,
+      `https://steamcdn-a.akamaihd.net/steam/apps/${appid}/header.jpg`,
+      `https://cdn.steamstatic.com/steam/apps/${appid}/header.jpg`
+    ];
+    
+    // Start with the first URL
+    setGameImages(prev => ({ ...prev, [appid]: imageUrls[0] }));
+    setImageLoading(prev => ({ ...prev, [appid]: false }));
+  };
+
+  const handleImageError = (appid: number) => {
+    const errorCount = imageErrors[appid] || 0;
+    const imageUrls = [
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
+      `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/header.jpg`,
+      `https://steamcdn-a.akamaihd.net/steam/apps/${appid}/header.jpg`,
+      `https://cdn.steamstatic.com/steam/apps/${appid}/header.jpg`
+    ];
+    
+    if (errorCount < imageUrls.length - 1) {
+      // Try next URL
+      const nextUrl = imageUrls[errorCount + 1];
+      setGameImages(prev => ({ ...prev, [appid]: nextUrl }));
+      setImageErrors(prev => ({ ...prev, [appid]: errorCount + 1 }));
+    } else {
+      // All URLs failed, set to null
+      setGameImages(prev => ({ ...prev, [appid]: null }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -249,16 +281,18 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
 
                       {/* Image */}
                       <div className="relative h-24 w-full bg-gradient-to-br from-purple-900 to-gray-900 overflow-hidden">
-                        {imageUrl ? (
+                        {imageLoading[game.appid] ? (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
+                          </div>
+                        ) : imageUrl ? (
                           <Image
                             src={imageUrl}
                             alt={game.name}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                             unoptimized
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
+                            onError={() => handleImageError(game.appid)}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300">
@@ -313,16 +347,18 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
               
               <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700/50 shadow-lg">
                 <div className="relative h-48 w-full bg-black group">
-                  {gameImages[selectedGame.appid] ? (
+                  {imageLoading[selectedGame.appid] ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+                    </div>
+                  ) : gameImages[selectedGame.appid] ? (
                     <Image
-                      src={gameImages[selectedGame.appid]}
+                      src={gameImages[selectedGame.appid]!}
                       alt={selectedGame.name}
                       fill
                       className="object-cover"
                       unoptimized
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      onError={() => handleImageError(selectedGame.appid)}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
