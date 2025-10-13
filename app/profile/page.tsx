@@ -139,7 +139,9 @@ export default function ProfilePage() {
 
             {suggestedGames.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎃</div>
+                <div className="mb-4 inline-block w-20 h-20">
+                  <Image src="/media/img/skibenDOC.webp" alt="No suggestions" width={80} height={80} className="w-full h-full rounded-full object-cover" />
+                </div>
                 <p className="text-gray-400 text-lg">Du har ikke foreslått noen spill ennå</p>
                 <button
                   onClick={() => router.push('/')}
@@ -171,7 +173,9 @@ export default function ProfilePage() {
                           {new Date(game.created_at).toLocaleDateString('no-NO')}
                         </span>
                         <span className="text-purple-400 font-bold flex items-center gap-1">
-                          <span>🎃</span>
+                          <span className="inline-block w-5 h-5 flex-shrink-0">
+                            <Image src="/media/img/POGGERS.webp" alt="Votes" width={20} height={20} className="w-full h-full rounded-full object-cover" />
+                          </span>
                           <span>{game.vote_count || 0}</span>
                         </span>
                       </div>
@@ -185,7 +189,9 @@ export default function ProfilePage() {
           {/* Voted Games */}
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-orange-500/30 shadow-2xl">
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-3xl">👻</span>
+              <span className="inline-block w-10 h-10 flex-shrink-0">
+                <Image src="/media/img/skibenDEVIL.webp" alt="Devil" width={40} height={40} className="w-full h-full rounded-full object-cover" />
+              </span>
               <h2 className="text-2xl font-bold text-white">
                 Spill du har stemt på
               </h2>
@@ -196,7 +202,9 @@ export default function ProfilePage() {
 
             {votedGames.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">👻</div>
+                <div className="mb-4 inline-block w-20 h-20">
+                  <Image src="/media/img/skibenDEVIL.webp" alt="No votes" width={80} height={80} className="w-full h-full rounded-full object-cover" />
+                </div>
                 <p className="text-gray-400 text-lg">Du har ikke stemt på noen spill ennå</p>
                 <button
                   onClick={() => router.push('/')}
@@ -228,7 +236,9 @@ export default function ProfilePage() {
                           {new Date(game.created_at).toLocaleDateString('no-NO')}
                         </span>
                         <span className="text-orange-400 font-bold flex items-center gap-1">
-                          <span>🎃</span>
+                          <span className="inline-block w-5 h-5 flex-shrink-0">
+                            <Image src="/media/img/POGGERS.webp" alt="Votes" width={20} height={20} className="w-full h-full rounded-full object-cover" />
+                          </span>
                           <span>{game.vote_count || 0}</span>
                         </span>
                       </div>

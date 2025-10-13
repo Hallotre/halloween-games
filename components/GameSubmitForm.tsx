@@ -4,6 +4,7 @@ import { SteamGame } from '@/lib/steam';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { trackGameSubmission, trackSearch } from '@/lib/analytics';
 
 interface GameSubmitFormProps {
   onGameSubmitted: () => void;
@@ -59,6 +60,9 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
         const response = await fetch(`/api/steam/search?q=${encodeURIComponent(searchQuery)}`);
         const data = await response.json();
         setSearchResults(data);
+        
+        // Track search event
+        trackSearch(searchQuery, data.length);
         
         // Fetch images for top results
         data.slice(0, 12).forEach((game: SteamGame) => {
@@ -120,7 +124,9 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
         throw new Error(data.error || 'Failed to submit game');
       }
 
-      // Success
+      // Success - track event
+      trackGameSubmission(selectedGame.name);
+      
       setSearchQuery('');
       setSelectedGame(null);
       setSearchResults([]);
@@ -228,10 +234,10 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                       key={game.appid}
                       onClick={() => handleSelectGame(game)}
                       disabled={isAlreadySuggested}
-                      className={`group relative bg-gray-900 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border text-left ${
+                      className={`group relative bg-gray-900 rounded-lg overflow-hidden shadow-md transition-all duration-300 border text-left ${
                         isAlreadySuggested 
                           ? 'border-green-600 opacity-60 cursor-not-allowed' 
-                          : 'border-gray-700 hover:border-purple-500 hover:scale-[1.02]'
+                          : 'border-gray-700 hover:border-purple-500 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)]'
                       }`}
                     >
                       {/* Already Suggested Badge */}
@@ -242,31 +248,31 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                       )}
 
                       {/* Image */}
-                      <div className="relative h-24 w-full bg-gradient-to-br from-purple-900 to-gray-900">
+                      <div className="relative h-24 w-full bg-gradient-to-br from-purple-900 to-gray-900 overflow-hidden">
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
                             alt={game.name}
                             fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                             unoptimized
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">
+                          <div className="w-full h-full flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300">
                             🎮
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent group-hover:from-purple-900/40 transition-colors duration-300"></div>
                       </div>
 
                       {/* Content */}
-                      <div className="p-2">
+                      <div className="p-2 bg-gray-900 group-hover:bg-gray-900/80 transition-colors duration-300">
                         <h3 className={`text-xs font-bold text-white line-clamp-2 ${
                           !isAlreadySuggested && 'group-hover:text-purple-300'
-                        } transition-colors`}>
+                        } transition-colors duration-300`}>
                           {game.name}
                         </h3>
                       </div>
@@ -366,7 +372,9 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                         </>
                       ) : (
                         <>
-                          <span className="mr-1">🎃</span>
+                          <span className="inline-block w-5 h-5 flex-shrink-0 mr-1">
+                            <Image src="/media/img/skibenDOC.webp" alt="Submit" width={20} height={20} className="w-full h-full rounded-full object-cover" />
+                          </span>
                           Send inn forslag
                         </>
                       )}

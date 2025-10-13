@@ -62,7 +62,9 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             <Link href="/">
               <h1 className="text-2xl font-bold text-white flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-                <span className="text-3xl">🎃</span>
+                <span className="inline-block w-10 h-10 flex-shrink-0">
+                  <Image src="/media/img/skeletonPls.gif" alt="Logo" width={40} height={40} className="w-full h-full object-contain" unoptimized />
+                </span>
                 <span className="hidden md:inline">Skibens Spooky Spillforslag</span>
                 <span className="md:hidden">Spooky Spill</span>
               </h1>

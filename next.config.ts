@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.cloudflare.steamstatic.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.7tv.app',
+        pathname: '/emote/**',
+      },
     ],
   },
 };

@@ -23,6 +23,11 @@ export const authOptions: NextAuthOptions = {
   ],
   debug: process.env.NODE_ENV === 'development',
   callbacks: {
+    async signIn({ user, account }: any) {
+      // Track successful login event
+      // Login will be tracked client-side via session update
+      return true;
+    },
     async jwt({ token, account, profile }: any) {
       if (account && profile) {
         token.id = profile.sub;
