@@ -248,7 +248,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
           </div>
 
 
-          {/* Search Results - Grid View */}
+          {/* Search Results - List View */}
           {showResults && searchResults.length > 0 && !selectedGame && (
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
@@ -256,7 +256,7 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                   Fant <span className="text-purple-400 font-bold">{searchResults.length}</span> spill
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2">
+              <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-2">
                 {searchResults.map((game) => {
                   const isAlreadySuggested = suggestedGames.includes(game.appid);
                   const imageUrl = gameImages[game.appid];
@@ -266,24 +266,17 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                       key={game.appid}
                       onClick={() => handleSelectGame(game)}
                       disabled={isAlreadySuggested}
-                      className={`group relative bg-gray-900 rounded-lg overflow-hidden shadow-md transition-all duration-300 border text-left ${
+                      className={`group relative bg-gray-800/60 rounded-md border transition-all duration-300 text-left flex items-center gap-3 px-3 py-2 ${
                         isAlreadySuggested 
                           ? 'border-green-600/60 opacity-60 cursor-not-allowed' 
-                          : 'border-gray-700/50 hover:border-purple-500/40 hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)]'
+                          : 'border-gray-700/50 hover:border-purple-500/40 hover:bg-gray-800'
                       }`}
                     >
-                      {/* Already Suggested Badge */}
-                      {isAlreadySuggested && (
-                        <div className="absolute top-2 right-2 z-10 bg-green-600 px-2 py-1 rounded-md shadow-lg">
-                          <span className="text-white font-bold text-xs">✓ Foreslått</span>
-                        </div>
-                      )}
-
                       {/* Image */}
-                      <div className="relative h-24 w-full bg-gradient-to-br from-purple-900 to-gray-900 overflow-hidden">
+                      <div className="relative h-12 w-20 flex-shrink-0 bg-gradient-to-br from-purple-900 to-gray-900 overflow-hidden rounded">
                         {imageLoading[game.appid] ? (
                           <div className="w-full h-full flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
                           </div>
                         ) : imageUrl ? (
                           <Image
@@ -295,20 +288,22 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                             onError={() => handleImageError(game.appid)}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300">
+                          <div className="w-full h-full flex items-center justify-center text-lg group-hover:scale-110 transition-transform duration-300">
                             🎮
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent group-hover:from-purple-900/40 transition-colors duration-300"></div>
                       </div>
 
                       {/* Content */}
-                      <div className="p-2 bg-gray-900 group-hover:bg-gray-900/80 transition-colors duration-300">
-                        <h3 className={`text-xs font-bold text-white line-clamp-2 ${
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`text-sm font-medium text-white truncate ${
                           !isAlreadySuggested && 'group-hover:text-purple-300'
                         } transition-colors duration-300`}>
                           {game.name}
                         </h3>
+                        {isAlreadySuggested && (
+                          <span className="text-xs text-green-400 font-medium">✓ Allerede foreslått</span>
+                        )}
                       </div>
                     </button>
                   );

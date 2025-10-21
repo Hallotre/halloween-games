@@ -20,6 +20,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<'votes' | 'newest' | 'oldest' | 'name'>('votes');
   const [activeTab, setActiveTab] = useState<'all' | 'top5'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [steamDetailsCache, setSteamDetailsCache] = useState<{ [key: string]: any }>({});
+  const [steamDetailsLoaded, setSteamDetailsLoaded] = useState(false);
 
   const fetchGames = async () => {
     try {
@@ -43,6 +45,11 @@ export default function Home() {
         });
         
         setGames(sortedGames);
+        
+        // Only batch load Steam details if we haven't loaded them yet
+        if (!steamDetailsLoaded) {
+          fetchSteamDetailsBatch(sortedGames);
+        }
       } else {
         console.error('API returned non-array data:', data);
         setGames([]);
@@ -50,6 +57,44 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching games:', error);
       setGames([]);
+    }
+  };
+
+  const fetchSteamDetailsBatch = async (games: Game[]) => {
+    try {
+      // Check localStorage first
+      const cached = localStorage.getItem('steam-details-cache');
+      const cacheTimestamp = localStorage.getItem('steam-details-cache-timestamp');
+      const now = Date.now();
+      const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+      
+      if (cached && cacheTimestamp && (now - parseInt(cacheTimestamp)) < CACHE_DURATION) {
+        setSteamDetailsCache(JSON.parse(cached));
+        setSteamDetailsLoaded(true);
+        return;
+      }
+
+      const appIds = games.map(game => game.steam_app_id);
+      const response = await fetch('/api/steam/batch-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ appIds }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const results = data.results || {};
+        setSteamDetailsCache(results);
+        setSteamDetailsLoaded(true);
+        
+        // Cache in localStorage
+        localStorage.setItem('steam-details-cache', JSON.stringify(results));
+        localStorage.setItem('steam-details-cache-timestamp', now.toString());
+      }
+    } catch (error) {
+      console.error('Error fetching Steam details batch:', error);
     }
   };
 
@@ -68,6 +113,18 @@ export default function Home() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
+      
+      // Load cached Steam details first
+      const cached = localStorage.getItem('steam-details-cache');
+      const cacheTimestamp = localStorage.getItem('steam-details-cache-timestamp');
+      const now = Date.now();
+      const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+      
+      if (cached && cacheTimestamp && (now - parseInt(cacheTimestamp)) < CACHE_DURATION) {
+        setSteamDetailsCache(JSON.parse(cached));
+        setSteamDetailsLoaded(true);
+      }
+      
       await fetchGames();
       await fetchUserVotes();
       setIsLoading(false);
@@ -77,11 +134,11 @@ export default function Home() {
     
     // Track page view
     trackPageView('home', (session?.user as any)?.id);
-  }, [session]);
+  }, [session?.user?.id]); // Only depend on user ID, not the entire session object
 
   useEffect(() => {
     const checkStreamerStatus = async () => {
-      if (!session) {
+      if (!session?.user?.id) {
         setIsStreamer(false);
         return;
       }
@@ -97,7 +154,7 @@ export default function Home() {
     };
 
     checkStreamerStatus();
-  }, [session]);
+  }, [session?.user?.id]); // Only depend on user ID, not the entire session object
 
   // Set up real-time subscriptions
   useEffect(() => {
@@ -135,7 +192,7 @@ export default function Home() {
       supabase.removeChannel(gamesSubscription);
       supabase.removeChannel(votesSubscription);
     };
-  }, [session]);
+  }, []); // Remove session dependency - subscriptions don't need to be recreated when session changes
 
   const handleVote = async (gameId: string) => {
     try {
@@ -215,7 +272,7 @@ export default function Home() {
     if (searchQuery.trim()) {
       trackSearch(searchQuery, filteredGames.length, (session?.user as any)?.id);
     }
-  }, [searchQuery, filteredGames.length, (session?.user as any)?.id]);
+  }, [searchQuery, filteredGames.length, session?.user?.id]); // Use session?.user?.id instead of (session?.user as any)?.id
 
   // Get top 5 games by votes (from filtered games)
   const top5Games = [...filteredGames]
@@ -442,20 +499,21 @@ export default function Home() {
             </div>
           )}
 
-          {/* Games Grid */}
+          {/* Games List */}
           {!(activeTab === 'top5' && top5Games.length === 0 && !searchQuery) && displayGames.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {displayGames.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    userVotes={userVotes}
-                    onVote={handleVote}
-                    onUnvote={handleUnvote}
-                    onDelete={isStreamer ? handleDelete : undefined}
-                    isStreamer={isStreamer}
-                  />
-                ))}
+            <div className="flex flex-col gap-2">
+              {displayGames.map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  userVotes={userVotes}
+                  onVote={handleVote}
+                  onUnvote={handleUnvote}
+                  onDelete={isStreamer ? handleDelete : undefined}
+                  isStreamer={isStreamer}
+                  steamDetails={steamDetailsCache[game.steam_app_id.toString()]}
+                />
+              ))}
             </div>
           )}
 

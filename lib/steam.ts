@@ -11,12 +11,46 @@ export interface SteamGameDetails {
   header_image: string;
   short_description?: string;
   type: string;
+  // Enhanced details
+  price?: {
+    currency: string;
+    initial: number;
+    final: number;
+    discount_percent: number;
+  };
+  release_date?: {
+    coming_soon: boolean;
+    date: string;
+  };
+  developers?: string[];
+  publishers?: string[];
+  genres?: string[];
+  categories?: string[];
+  metacritic?: {
+    score: number;
+    url: string;
+  };
+  recommendations?: {
+    total: number;
+    positive: number;
+    negative: number;
+    score_desc?: string;
+  };
+  platforms?: {
+    windows: boolean;
+    mac: boolean;
+    linux: boolean;
+  };
 }
 
 // Cache for Steam app list to avoid repeated fetches
 let cachedAppList: SteamGame[] | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+// Cache for Steam game details to avoid repeated fetches
+const gameDetailsCache = new Map<number, { data: SteamGameDetails; timestamp: number }>();
+const GAME_DETAILS_CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 export async function getSteamAppList(): Promise<SteamGame[]> {
   const now = Date.now();
@@ -37,11 +71,6 @@ export async function getSteamAppList(): Promise<SteamGame[]> {
     
     return cachedAppList || [];
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching Steam app list:', error);
-    } else {
-      console.error('Error fetching Steam app list');
-    }
     // Return cached data even if expired, if available
     if (cachedAppList) {
       return cachedAppList;
@@ -244,42 +273,55 @@ export async function searchSteamGames(query: string): Promise<SteamGame[]> {
 }
 
 export async function getSteamGameDetails(appId: number): Promise<SteamGameDetails | null> {
+  const now = Date.now();
+  
+  // Check cache first
+  const cached = gameDetailsCache.get(appId);
+  if (cached && (now - cached.timestamp) < GAME_DETAILS_CACHE_DURATION) {
+    return cached.data;
+  }
+
   try {
-    const response = await axios.get(
+    // First get basic game details from Store API
+    const storeResponse = await axios.get(
       `https://store.steampowered.com/api/appdetails?appids=${appId}`,
       { 
         timeout: 15000, // 15 second timeout (Steam can be slow)
         params: {
-          cc: 'us', // Currency code
-          l: 'english' // Language
+          cc: 'no', // Currency code - Norwegian Kroner
+          l: 'norwegian' // Language
         }
       }
     );
     
-    const data = response.data[appId];
+    const storeData = storeResponse.data[appId];
     
-    if (!data || !data.success) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Steam API returned no data for appId ${appId}`);
-      }
+    if (!storeData || !storeData.success) {
       return null;
     }
     
-    const gameData = data.data;
+    const gameData = storeData.data;
+    
+    // Now get review data from Steam User Reviews API
+    let reviewData = null;
+    try {
+      const reviewResponse = await axios.get(
+        `https://store.steampowered.com/appreviews/${appId}?json=1&language=norwegian&num_per_page=0&filter=all&review_type=all&purchase_type=all`,
+        { timeout: 10000 }
+      );
+      reviewData = reviewResponse.data;
+    } catch (reviewError) {
+      // Silently handle review data fetch errors
+    }
+    
     
     // Only return if it's a game (not DLC, video, etc.)
     if (gameData.type !== 'game') {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`AppId ${appId} is not a game, it's a ${gameData.type}`);
-      }
       return null;
     }
     
     // Validate that required fields exist
     if (!gameData.name || !gameData.header_image) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`AppId ${appId} missing required fields`);
-      }
       return null;
     }
     
@@ -301,29 +343,117 @@ export async function getSteamGameDetails(appId: number): Promise<SteamGameDetai
     ];
     
     if (invalidPatterns.some(pattern => nameLower.includes(pattern))) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`AppId ${appId} (${gameData.name}) appears to be DLC/content, not a game`);
-      }
       return null;
     }
     
-    return {
+    // Extract price information
+    const priceInfo = gameData.price_overview ? {
+      currency: gameData.price_overview.currency,
+      initial: gameData.price_overview.initial,
+      final: gameData.price_overview.final,
+      discount_percent: gameData.price_overview.discount_percent,
+    } : undefined;
+
+    // Extract release date
+    const releaseDate = gameData.release_date ? {
+      coming_soon: gameData.release_date.coming_soon,
+      date: gameData.release_date.date,
+    } : undefined;
+
+    // Extract developers and publishers
+    const developers = gameData.developers || [];
+    const publishers = gameData.publishers || [];
+
+    // Extract genres
+    const genres = gameData.genres ? gameData.genres.map((g: any) => g.description) : [];
+
+    // Extract categories
+    const categories = gameData.categories ? gameData.categories.map((c: any) => c.description) : [];
+
+    // Extract metacritic score
+    const metacritic = gameData.metacritic ? {
+      score: gameData.metacritic.score,
+      url: gameData.metacritic.url,
+    } : undefined;
+
+  // Extract recommendations (user reviews) - Use User Reviews API data first
+  let recommendations = undefined;
+  
+  // First try to get review data from the User Reviews API (more reliable)
+  if (reviewData && reviewData.query_summary) {
+    const summary = reviewData.query_summary;
+    recommendations = {
+      total: summary.total_reviews || 0,
+      positive: summary.total_positive || 0,
+      negative: summary.total_negative || 0,
+    };
+  }
+  
+  // Fallback to Store API data if User Reviews API didn't work
+  if (!recommendations || recommendations.total === 0) {
+    if (gameData.total_reviews && gameData.total_reviews > 0) {
+      recommendations = {
+        total: gameData.total_reviews,
+        positive: gameData.positive_reviews || 0,
+        negative: gameData.negative_reviews || 0,
+      };
+    } else if (gameData.total_positive !== undefined && gameData.total_negative !== undefined) {
+      recommendations = {
+        total: (gameData.total_positive || 0) + (gameData.total_negative || 0),
+        positive: gameData.total_positive || 0,
+        negative: gameData.total_negative || 0,
+      };
+    } else if (gameData.reviews && gameData.reviews.total_reviews) {
+      recommendations = {
+        total: gameData.reviews.total_reviews || 0,
+        positive: gameData.reviews.total_positive || 0,
+        negative: gameData.reviews.total_negative || 0,
+      };
+    }
+  }
+  
+  // If we still don't have review data, try to get it from review_score fields
+  if (!recommendations && gameData.review_score !== undefined) {
+    // Steam sometimes provides review_score and review_score_desc instead of raw numbers
+    // We can't calculate exact ratios, but we can show the score description
+    recommendations = {
+      total: 0, // Unknown total
+      positive: 0,
+      negative: 0,
+      score_desc: gameData.review_score_desc || 'Unknown'
+    };
+  }
+
+    // Extract platform support
+    const platforms = gameData.platforms ? {
+      windows: gameData.platforms.windows || false,
+      mac: gameData.platforms.mac || false,
+      linux: gameData.platforms.linux || false,
+    } : undefined;
+
+    const gameDetails: SteamGameDetails = {
       appid: appId,
       name: gameData.name,
       header_image: gameData.header_image,
       short_description: gameData.short_description,
       type: gameData.type,
+      price: priceInfo,
+      release_date: releaseDate,
+      developers,
+      publishers,
+      genres,
+      categories,
+      metacritic,
+      recommendations,
+      platforms,
     };
+
+    // Cache the result
+    gameDetailsCache.set(appId, { data: gameDetails, timestamp: now });
+    
+    return gameDetails;
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      if (error.response?.status === 429) {
-        console.error(`Rate limited by Steam API for appId ${appId}`);
-      } else {
-        console.error(`Error fetching Steam game details for appId ${appId}:`, error.message);
-      }
-    } else {
-      console.error(`Error fetching Steam game details for appId ${appId}`);
-    }
+    // Silently handle Steam API errors
     return null;
   }
 }

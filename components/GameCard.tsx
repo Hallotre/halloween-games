@@ -1,9 +1,10 @@
 'use client';
 
 import { Game } from '@/lib/supabase';
+import { SteamGameDetails } from '@/lib/steam';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface GameCardProps {
   game: Game;
@@ -12,6 +13,7 @@ interface GameCardProps {
   onUnvote: (gameId: string) => void;
   onDelete?: (gameId: string) => void;
   isStreamer: boolean;
+  steamDetails?: SteamGameDetails | null;
 }
 
 export default function GameCard({
@@ -21,10 +23,71 @@ export default function GameCard({
   onUnvote,
   onDelete,
   isStreamer,
+  steamDetails: propSteamDetails,
 }: GameCardProps) {
   const { data: session } = useSession();
   const [isVoting, setIsVoting] = useState(false);
+  const [steamDetails, setSteamDetails] = useState<SteamGameDetails | null>(propSteamDetails || null);
+  const [loadingSteamDetails, setLoadingSteamDetails] = useState(false);
+  const [steamError, setSteamError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const hasVoted = userVotes.includes(game.id);
+
+  const fetchSteamDetails = async (retryAttempt = 0) => {
+    if (steamDetails || loadingSteamDetails) return;
+    
+    setLoadingSteamDetails(true);
+    setSteamError(null);
+    
+    try {
+      const response = await fetch(`/api/steam/details?appid=${game.steam_app_id}`, {
+        timeout: 10000, // 10 second timeout
+      });
+      
+      if (response.ok) {
+        const details = await response.json();
+        setSteamDetails(details);
+        setRetryCount(0);
+      } else if (response.status === 429 && retryAttempt < 3) {
+        // Rate limited - retry with exponential backoff
+        const retryDelay = Math.pow(2, retryAttempt) * 1000; // 1s, 2s, 4s
+        setTimeout(() => {
+          setRetryCount(retryAttempt + 1);
+          fetchSteamDetails(retryAttempt + 1);
+        }, retryDelay);
+        return;
+      } else if (response.status === 404) {
+        setSteamError('Game not found on Steam');
+      } else {
+        setSteamError('Failed to load Steam data');
+      }
+    } catch (error) {
+      console.error('Error fetching Steam details:', error);
+      if (retryAttempt < 2) {
+        // Retry on network errors
+        const retryDelay = Math.pow(2, retryAttempt) * 1000;
+        setTimeout(() => {
+          setRetryCount(retryAttempt + 1);
+          fetchSteamDetails(retryAttempt + 1);
+        }, retryDelay);
+        return;
+      } else {
+        setSteamError('Network error');
+      }
+    } finally {
+      setLoadingSteamDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    // Update steamDetails when prop changes
+    if (propSteamDetails) {
+      setSteamDetails(propSteamDetails);
+    } else if (!steamDetails && !loadingSteamDetails) {
+      // Only fetch if we don't have data from props
+      fetchSteamDetails();
+    }
+  }, [game.steam_app_id, propSteamDetails]);
 
   const handleVoteClick = async () => {
     if (!session) return;
@@ -42,110 +105,149 @@ export default function GameCard({
   };
 
   return (
-    <div className="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all duration-500 border border-gray-700/50 hover:border-purple-500/40 hover:-translate-y-2">
-
-      {/* Game Image */}
-      <div className="relative w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden" style={{ aspectRatio: '460/215' }}>
-        <Image
-          src={game.game_image}
-          alt={game.game_name}
-          fill
-          className="object-contain group-hover:scale-110 transition-transform duration-500 ease-out"
-          unoptimized
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent pointer-events-none group-hover:from-purple-900/30 transition-colors duration-500"></div>
-
-        {/* Vote Count Badge */}
-        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 group-hover:bg-purple-900/80 group-hover:scale-110 transition-all duration-300">
-          <span className="inline-block w-6 h-6 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <Image 
-              src="/media/img/POGGERS.webp" 
-              alt="Votes" 
-              width={24} 
-              height={24} 
-              className="w-full h-full rounded-full object-cover" 
-            />
-          </span>
-          <span className="text-white font-bold">{game.vote_count || 0}</span>
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors duration-300">
-          {game.game_name}
-        </h3>
-        
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
-            <Image 
-              src="https://cdn.7tv.app/emote/01H26JEK4R000651A0D191BK9M/4x.webp" 
-              alt="community" 
-              width={32} 
-              height={32} 
-              className="w-full h-full object-contain" 
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-gray-400 text-sm">Foreslått av en simp</p>
-          </div>
+    <div className="group relative px-3 py-2 rounded-md border border-gray-700/50 bg-gray-800/60 hover:bg-gray-800 transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="relative h-14 w-28 flex-shrink-0 bg-black overflow-hidden rounded">
+          <Image
+            src={game.game_image}
+            alt={game.game_name}
+            fill
+            className="object-contain"
+            unoptimized
+          />
         </div>
 
-        {/* Actions */}
-        <div className="space-y-2">
-          <button
-            onClick={handleVoteClick}
-            disabled={!session || isVoting}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105 ${
-              hasVoted
-                ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50'
-                : 'bg-gradient-to-r from-gray-700 to-gray-600 hover:from-purple-600 hover:to-orange-600 text-white hover:shadow-lg hover:shadow-purple-500/30'
-            } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-gray-700 disabled:hover:to-gray-600 disabled:hover:scale-100`}
-          >
-            <span className="inline-block w-8 h-8 flex-shrink-0">
-              <Image 
-                src="/media/img/POGGERS.webp" 
-                alt="Vote" 
-                width={32} 
-                height={32} 
-                className="w-full h-full rounded-full object-cover" 
-              />
-            </span>
-            <span>{hasVoted ? 'Du har stemt!' : session ? 'Stem på dette' : 'Logg inn for å stemme'}</span>
-          </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-medium truncate">{game.game_name}</h3>
+              {steamDetails && (
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                  {(() => {
+                    if (!steamDetails.release_date || steamDetails.release_date.coming_soon) return null;
+                    const raw = String(steamDetails.release_date.date || '');
+                    const ts = Date.parse(raw);
+                    if (!Number.isNaN(ts)) {
+                      return <span>{new Date(ts).getFullYear()}</span>;
+                    }
+                    const match = raw.match(/\b(\d{4})\b/);
+                    return match ? <span>{match[1]}</span> : null;
+                  })()}
+                  {steamDetails.genres && steamDetails.genres.length > 0 && (
+                    <span>• {steamDetails.genres.slice(0, 2).join(', ')}</span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              {/* Right-side compact badges: price + review + votes */}
+              {steamDetails && !loadingSteamDetails && (
+                <>
+                  {/* Price (hidden on very small screens) */}
+                  {(() => {
+                    const p = steamDetails.price;
+                    const hasDiscount = !!(p && p.final > 0 && p.discount_percent > 0 && p.initial > p.final);
+                    const wrapperClass = hasDiscount
+                      ? 'hidden sm:inline-flex items-center gap-2 px-2 py-0.5 rounded border border-green-600/40 bg-green-700/20 text-green-100'
+                      : 'hidden sm:inline-flex items-center gap-2 px-2 py-0.5 rounded bg-gray-700/70 text-white';
+                    return (
+                      <span className={wrapperClass}>
+                        {p ? (
+                          p.final === 0 ? (
+                            'Gratis'
+                          ) : (
+                            <>
+                              {hasDiscount && (
+                                <span className="line-through opacity-70">{(p.initial / 100).toFixed(0)} kr</span>
+                              )}
+                              <span>{(p.final / 100).toFixed(0)} kr</span>
+                            </>
+                          )
+                        ) : 'Gratis'}
+                        {hasDiscount && (
+                          <span className="px-1.5 py-0.5 rounded bg-green-700/80 text-green-100">-{p!.discount_percent}%</span>
+                        )}
+                      </span>
+                    );
+                  })()}
 
-          {/* Open Buttons: Steam app + Web store */}
-          <div className="flex gap-2">
+                  {/* Review sentiment (hidden on very small screens) */}
+                  {(() => {
+                    const rec = steamDetails.recommendations;
+                    if (!rec) return null;
+                    if (rec.total > 0) {
+                      const ratio = rec.positive / rec.total;
+                      const color = ratio >= 0.8
+                        ? 'bg-green-700/70 text-green-100'
+                        : ratio >= 0.6
+                        ? 'bg-yellow-700/70 text-yellow-100'
+                        : 'bg-red-700/70 text-red-100';
+                      const label = ratio >= 0.8 ? 'Very Positive' : ratio >= 0.6 ? 'Mostly Positive' : 'Mixed';
+                      return (
+                        <span className={`hidden md:inline-flex px-2 py-0.5 rounded ${color}`}>
+                          {label === 'Very Positive' ? 'Veldig positive' : label === 'Mostly Positive' ? 'For det meste positive' : 'Blandet'}
+                        </span>
+                      );
+                    }
+                    if (rec.score_desc) {
+                      const lower = rec.score_desc.toLowerCase();
+                      const translated = lower.includes('very positive') ? 'Veldig positive' : lower.includes('mostly positive') ? 'For det meste positive' : lower.includes('mixed') ? 'Blandet' : rec.score_desc;
+                      return (
+                        <span className="hidden md:inline-flex px-2 py-0.5 rounded bg-gray-700/70 text-gray-200">{translated}</span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
+              )}
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60">
+                <Image src="/media/img/POGGERS.webp" alt="Votes" width={16} height={16} className="rounded-full" />
+                <span className="text-white font-semibold">{game.vote_count || 0}</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handleVoteClick}
+              disabled={!session || isVoting}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                hasVoted
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                  : 'bg-gray-700 hover:bg-purple-600 text-white'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {hasVoted ? 'Fjern stemme' : session ? 'Stem' : 'Logg inn for å stemme'}
+            </button>
+
             <a
               href={`steam://store/${game.steam_app_id}`}
-              className="w-1/2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105"
+              className="px-3 py-1.5 rounded text-sm bg-blue-700 hover:bg-blue-800 text-white"
               title="Åpne i Steam-appen"
             >
-              <span>🎮</span>
-              <span>Åpne i Steam</span>
+              Åpne i Steam
             </a>
             <a
               href={`https://store.steampowered.com/app/${game.steam_app_id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-1/2 px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-purple-600 hover:to-orange-600 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
+              className="px-3 py-1.5 rounded text-sm bg-gray-700 hover:bg-gray-600 text-white"
               title="Åpne i nettleseren"
             >
-              <span>🌐</span>
-              <span>Åpne på nett</span>
+              Åpne på nett
             </a>
-          </div>
 
-          {isStreamer && onDelete && (
-            <button
-              onClick={() => onDelete(game.id)}
-              className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-red-500/30"
-              title="Slett spill"
-            >
-              <span>🗑️</span>
-              <span>Slett spill</span>
-            </button>
-          )}
+            {isStreamer && onDelete && (
+              <button
+                onClick={() => onDelete(game.id)}
+                className="ml-auto px-3 py-1.5 rounded text-sm bg-red-600 hover:bg-red-700 text-white"
+                title="Slett spill"
+              >
+                Slett
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
