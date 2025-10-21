@@ -40,9 +40,7 @@ export default function GameCard({
     setSteamError(null);
     
     try {
-      const response = await fetch(`/api/steam/details?appid=${game.steam_app_id}`, {
-        timeout: 10000, // 10 second timeout
-      });
+      const response = await fetch(`/api/steam/details?appid=${game.steam_app_id}`);
       
       if (response.ok) {
         const details = await response.json();

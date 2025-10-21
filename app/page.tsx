@@ -134,11 +134,11 @@ export default function Home() {
     
     // Track page view
     trackPageView('home', (session?.user as any)?.id);
-  }, [session?.user?.id]); // Only depend on user ID, not the entire session object
+  }, [(session?.user as any)?.id]); // Only depend on user ID, not the entire session object
 
   useEffect(() => {
     const checkStreamerStatus = async () => {
-      if (!session?.user?.id) {
+      if (!(session?.user as any)?.id) {
         setIsStreamer(false);
         return;
       }
@@ -154,7 +154,7 @@ export default function Home() {
     };
 
     checkStreamerStatus();
-  }, [session?.user?.id]); // Only depend on user ID, not the entire session object
+  }, [(session?.user as any)?.id]); // Only depend on user ID, not the entire session object
 
   // Set up real-time subscriptions
   useEffect(() => {
@@ -272,7 +272,7 @@ export default function Home() {
     if (searchQuery.trim()) {
       trackSearch(searchQuery, filteredGames.length, (session?.user as any)?.id);
     }
-  }, [searchQuery, filteredGames.length, session?.user?.id]); // Use session?.user?.id instead of (session?.user as any)?.id
+  }, [searchQuery, filteredGames.length, (session?.user as any)?.id]); // Use proper type casting for user ID
 
   // Get top 5 games by votes (from filtered games)
   const top5Games = [...filteredGames]
