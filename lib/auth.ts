@@ -9,10 +9,9 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AUTH_TWITCH_SECRET || process.env.TWITCH_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'openid user:read:email',
+          scope: 'openid',
           claims: {
             id_token: {
-              email: null,
               picture: null,
               preferred_username: null,
             },

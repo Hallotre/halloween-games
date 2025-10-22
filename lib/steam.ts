@@ -30,12 +30,6 @@ export interface SteamGameDetails {
     score: number;
     url: string;
   };
-  recommendations?: {
-    total: number;
-    positive: number;
-    negative: number;
-    score_desc?: string;
-  };
   platforms?: {
     windows: boolean;
     mac: boolean;
@@ -302,17 +296,6 @@ export async function getSteamGameDetails(appId: number): Promise<SteamGameDetai
     
     const gameData = storeData.data;
     
-    // Now get review data from Steam User Reviews API
-    let reviewData = null;
-    try {
-      const reviewResponse = await axios.get(
-        `https://store.steampowered.com/appreviews/${appId}?json=1&language=norwegian&num_per_page=0&filter=all&review_type=all&purchase_type=all`,
-        { timeout: 10000 }
-      );
-      reviewData = reviewResponse.data;
-    } catch (reviewError) {
-      // Silently handle review data fetch errors
-    }
     
     
     // Only return if it's a game (not DLC, video, etc.)
@@ -376,53 +359,6 @@ export async function getSteamGameDetails(appId: number): Promise<SteamGameDetai
       url: gameData.metacritic.url,
     } : undefined;
 
-  // Extract recommendations (user reviews) - Use User Reviews API data first
-  let recommendations = undefined;
-  
-  // First try to get review data from the User Reviews API (more reliable)
-  if (reviewData && reviewData.query_summary) {
-    const summary = reviewData.query_summary;
-    recommendations = {
-      total: summary.total_reviews || 0,
-      positive: summary.total_positive || 0,
-      negative: summary.total_negative || 0,
-    };
-  }
-  
-  // Fallback to Store API data if User Reviews API didn't work
-  if (!recommendations || recommendations.total === 0) {
-    if (gameData.total_reviews && gameData.total_reviews > 0) {
-      recommendations = {
-        total: gameData.total_reviews,
-        positive: gameData.positive_reviews || 0,
-        negative: gameData.negative_reviews || 0,
-      };
-    } else if (gameData.total_positive !== undefined && gameData.total_negative !== undefined) {
-      recommendations = {
-        total: (gameData.total_positive || 0) + (gameData.total_negative || 0),
-        positive: gameData.total_positive || 0,
-        negative: gameData.total_negative || 0,
-      };
-    } else if (gameData.reviews && gameData.reviews.total_reviews) {
-      recommendations = {
-        total: gameData.reviews.total_reviews || 0,
-        positive: gameData.reviews.total_positive || 0,
-        negative: gameData.reviews.total_negative || 0,
-      };
-    }
-  }
-  
-  // If we still don't have review data, try to get it from review_score fields
-  if (!recommendations && gameData.review_score !== undefined) {
-    // Steam sometimes provides review_score and review_score_desc instead of raw numbers
-    // We can't calculate exact ratios, but we can show the score description
-    recommendations = {
-      total: 0, // Unknown total
-      positive: 0,
-      negative: 0,
-      score_desc: gameData.review_score_desc || 'Unknown'
-    };
-  }
 
     // Extract platform support
     const platforms = gameData.platforms ? {
@@ -444,7 +380,6 @@ export async function getSteamGameDetails(appId: number): Promise<SteamGameDetai
       genres,
       categories,
       metacritic,
-      recommendations,
       platforms,
     };
 

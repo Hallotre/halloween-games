@@ -118,7 +118,13 @@ export default function GameCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-medium truncate">{game.game_name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-white font-medium truncate">{game.game_name}</h3>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60">
+                  <Image src="/media/img/POGGERS.webp" alt="Votes" width={16} height={16} className="rounded-full" />
+                  <span className="text-white font-semibold">{game.vote_count || 0}</span>
+                </span>
+              </div>
               {steamDetails && (
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                   {(() => {
@@ -169,40 +175,9 @@ export default function GameCard({
                     );
                   })()}
 
-                  {/* Review sentiment (hidden on very small screens) */}
-                  {(() => {
-                    const rec = steamDetails.recommendations;
-                    if (!rec) return null;
-                    if (rec.total > 0) {
-                      const ratio = rec.positive / rec.total;
-                      const color = ratio >= 0.8
-                        ? 'bg-green-700/70 text-green-100'
-                        : ratio >= 0.6
-                        ? 'bg-yellow-700/70 text-yellow-100'
-                        : 'bg-red-700/70 text-red-100';
-                      const label = ratio >= 0.8 ? 'Very Positive' : ratio >= 0.6 ? 'Mostly Positive' : 'Mixed';
-                      return (
-                        <span className={`hidden md:inline-flex px-2 py-0.5 rounded ${color}`}>
-                          {label === 'Very Positive' ? 'Veldig positive' : label === 'Mostly Positive' ? 'For det meste positive' : 'Blandet'}
-                        </span>
-                      );
-                    }
-                    if (rec.score_desc) {
-                      const lower = rec.score_desc.toLowerCase();
-                      const translated = lower.includes('very positive') ? 'Veldig positive' : lower.includes('mostly positive') ? 'For det meste positive' : lower.includes('mixed') ? 'Blandet' : rec.score_desc;
-                      return (
-                        <span className="hidden md:inline-flex px-2 py-0.5 rounded bg-gray-700/70 text-gray-200">{translated}</span>
-                      );
-                    }
-                    return null;
-                  })()}
                 </>
               )}
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60">
-                <Image src="/media/img/POGGERS.webp" alt="Votes" width={16} height={16} className="rounded-full" />
-                <span className="text-white font-semibold">{game.vote_count || 0}</span>
-              </span>
             </div>
           </div>
 
