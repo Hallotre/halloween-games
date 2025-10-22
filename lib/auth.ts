@@ -9,20 +9,14 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AUTH_TWITCH_SECRET || process.env.TWITCH_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'openid',
-          claims: {
-            id_token: {
-              picture: null,
-              preferred_username: null,
-            },
-          },
+          scope: 'openid user:read:email',
         },
       },
     }),
   ],
   debug: process.env.NODE_ENV === 'development',
   callbacks: {
-    async signIn({ user, account }: any) {
+    async signIn({ user, account, profile }: any) {
       // Track successful login event
       // Login will be tracked client-side via session update
       return true;
@@ -30,8 +24,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, profile }: any) {
       if (account && profile) {
         token.id = profile.sub;
-        token.username = (profile as any).preferred_username;
-        token.image = (profile as any).picture;
+        token.username = (profile as any).preferred_username || (profile as any).login;
+        token.image = (profile as any).picture || (profile as any).profile_image_url;
       }
       return token;
     },
