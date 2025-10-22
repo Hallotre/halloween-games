@@ -3,6 +3,7 @@ import TwitchProvider from 'next-auth/providers/twitch';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  url: process.env.NEXTAUTH_URL,
   providers: [
     TwitchProvider({
       clientId: process.env.AUTH_TWITCH_ID || process.env.TWITCH_CLIENT_ID!,
@@ -20,9 +21,10 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  debug: process.env.NODE_ENV === 'development',
+  debug: true,
   callbacks: {
-    async signIn({ user, account }: any) {
+    async signIn({ user, account, profile }: any) {
+      console.log('SignIn callback:', { user, account, profile });
       // Track successful login event
       // Login will be tracked client-side via session update
       return true;
