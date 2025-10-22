@@ -3,7 +3,6 @@ import TwitchProvider from 'next-auth/providers/twitch';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  url: process.env.NEXTAUTH_URL,
   providers: [
     TwitchProvider({
       clientId: process.env.AUTH_TWITCH_ID || process.env.TWITCH_CLIENT_ID!,
