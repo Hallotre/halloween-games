@@ -7,6 +7,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClarityScript from "@/components/ClarityScript";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/CookieBanner";
+import Image from "next/image";
+import EmoteModal from "@/components/EmoteModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +37,8 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-900 min-h-screen`}>
         <GoogleAnalytics />
         <Providers>
+          {/* Foreground emote modal */}
+          <EmoteModal />
           <Navbar />
           {children}
           <SpeedInsights />
