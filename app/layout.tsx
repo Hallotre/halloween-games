@@ -7,8 +7,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClarityScript from "@/components/ClarityScript";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieBanner from "@/components/CookieBanner";
-import Image from "next/image";
-import EmoteModal from "@/components/EmoteModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,8 +35,12 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-900 min-h-screen`}>
         <GoogleAnalytics />
         <Providers>
-          {/* Foreground emote modal */}
-          <EmoteModal />
+          {/* Informational banner */}
+          <div className="bg-yellow-600/90 text-white text-center py-3 px-4 border-b-2 border-yellow-500">
+            <p className="text-sm md:text-base font-medium">
+              ⚠️ Denne siden er nå stengt ned og er kun tilgjengelig for visningsformål
+            </p>
+          </div>
           <Navbar />
           {children}
           <SpeedInsights />

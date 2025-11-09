@@ -137,39 +137,9 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
   const handleSubmit = async () => {
     if (!selectedGame) return;
 
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/games', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          steam_app_id: selectedGame.appid,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit game');
-      }
-
-      // Success - track event
-      trackGameSubmission(selectedGame.appid.toString(), selectedGame.name, (session?.user as any)?.id);
-      
-      setSearchQuery('');
-      setSelectedGame(null);
-      setSearchResults([]);
-      setShowResults(false);
-      setError('');
-      onGameSubmitted();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Submission is disabled - site is closed down
+    setError('Innsending av spill er deaktivert. Siden er stengt ned og kun tilgjengelig for visningsformål.');
+    return;
   };
 
   const handleSelectGame = (game: SteamGame) => {
@@ -393,22 +363,14 @@ export default function GameSubmitForm({ onGameSubmitted }: GameSubmitFormProps)
                     </button>
                     <button
                       onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-lg"
+                      disabled={true}
+                      className="flex-1 py-2 bg-gray-600 text-gray-400 rounded-lg transition-all cursor-not-allowed font-medium text-sm shadow-lg"
+                      title="Innsending er deaktivert - siden er stengt ned"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <span className="inline-block animate-spin mr-1">⏳</span>
-                          Sender...
-                        </>
-                      ) : (
-                        <>
-                          <span className="inline-block w-5 h-5 flex-shrink-0 mr-1">
-                            <Image src="/media/img/skibenDOC.webp" alt="Submit" width={20} height={20} className="w-full h-full rounded-full object-cover" />
-                          </span>
-                          Send inn forslag
-                        </>
-                      )}
+                      <span className="inline-block w-5 h-5 flex-shrink-0 mr-1">
+                        <Image src="/media/img/skibenDOC.webp" alt="Submit" width={20} height={20} className="w-full h-full rounded-full object-cover opacity-50" />
+                      </span>
+                      Innsending deaktivert
                     </button>
                   </div>
                 </div>
